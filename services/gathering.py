@@ -7,5 +7,4 @@ class GatherService:
         self.gateway = gateway
 
     async def gather_resources(self, character: Character, resource: str):
-        dto = await self.gateway.gather(character.name, resource)
-        character.update_from_dto({"data": dto["data"]["character"]})
+        await self.gateway.gather(character)

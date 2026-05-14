@@ -28,3 +28,9 @@ class Inventory:
                 if item.quantity <= 0:
                     self.items.remove(item)
                 return
+
+    def is_full(self) -> bool:
+        cpt = 0
+        for item in self.items:
+            cpt += item.quantity
+        return cpt >= self.max_items

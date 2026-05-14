@@ -1,3 +1,5 @@
+# bot_completer.py
+
 from prompt_toolkit.completion import Completer, Completion
 
 

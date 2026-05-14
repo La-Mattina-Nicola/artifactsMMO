@@ -13,5 +13,5 @@ class MoveToTask(Task):
         if character.position.x == self.x and character.position.y == self.y:
             return True
 
-        await self.movement_service.move_character(character, self.x, self.y)
+        await self.movement_service.move(character, self.x, self.y)
         return True

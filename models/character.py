@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from models.stat import Stats
 from models.skill import Skills
 from models.skill_level import SkillLevel
@@ -145,3 +145,13 @@ class Character:
     def update_from_dto(self, data: dict):
         updated = Character.from_dto(data)
         self.__dict__.update(updated.__dict__)
+
+    @property
+    def cooldown_remaining(self) -> int:
+        if not self.cooldowns.expiration:
+            return 0
+
+        now = datetime.now(timezone.utc)
+        remaining = (self.cooldowns.expiration - now).total_seconds()
+
+        return max(0, int(remaining))

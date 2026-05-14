@@ -2,7 +2,6 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
-from api import ApiError
 from models import Character
 from tasks.base_task import Task
 
@@ -31,14 +30,14 @@ class CharacterController:
         now = datetime.now(timezone.utc)
         remaining = (expiration - now).total_seconds()
         if remaining > 0:
-            logger.debug("%s attend cooldown %.1fs", self.character.name, remaining)
+            # logger.debug("%s attend cooldown %.1fs", self.character.name, remaining)
             await asyncio.sleep(remaining)
 
     async def main_loop(self):
         while True:
+            await asyncio.sleep(3)
             await self._wait_cooldown()
 
-            # Sélection de la tâche active
             if self.priority_task:
                 active_task = self.priority_task
                 source = "PRIORITY"
@@ -50,12 +49,22 @@ class CharacterController:
             elif self.default_routine:
                 active_task = self.default_routine.generate_task(self.character)
                 source = "DEFAULT"
+                logger.debug(
+                    "%s — tâche générée : %s",
+                    self.character.name,
+                    active_task.__class__.__name__,
+                )
 
             else:
                 await asyncio.sleep(0.5)
                 continue
+            logger.debug(
+                "%s — exécute %s [%s]",
+                self.character.name,
+                active_task.__class__.__name__,
+                source,
+            )
 
-            # Exécution
             try:
                 done = await active_task.execute_step(self.character)
 
