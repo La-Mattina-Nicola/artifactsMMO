@@ -1,20 +1,14 @@
-from datetime import datetime
-
+from dotenv.main import logger
 from api import ApiClient
 from models.character import Character
-
 from functools import wraps
-from api import ApiClient
-from models.character import Character
 
 
 def sync_character(func):
     @wraps(func)
     async def wrapper(self, character, *args, **kwargs):
-        # Nom du personnage (string)
         name = character.name if isinstance(character, Character) else character
 
-        # Appel API
         response_data = await func(self, name, *args, **kwargs)
 
         if not isinstance(character, Character):
@@ -91,3 +85,41 @@ class ArtifactsGateway:
     async def gather(self, character):
         response = await self.api_client.post(f"/my/{character}/action/gathering")
         return response.json()
+
+    @sync_character
+    async def deposit_items(self, name: str, items: list[dict]) -> dict:
+        response = await self.api_client.post(
+            f"/my/{name}/action/bank/deposit/item",
+            json=items,
+        )
+        return response.json()
+
+    async def _get_all_pages(self, endpoint: str) -> list[dict]:
+        results = []
+        page = 1
+
+        while True:
+            response = await self.api_client.get(
+                endpoint, params={"page": page, "size": 50}
+            )
+            data = response.json()
+            results.extend(data["data"])
+
+            if page >= data["pages"]:
+                break
+            page += 1
+
+        logger.debug("%s — %d entrées chargées", endpoint, len(results))
+        return results
+
+    async def get_maps(self) -> list[dict]:
+        return await self._get_all_pages("/maps")
+
+    async def get_resources(self) -> list[dict]:
+        return await self._get_all_pages("/resources")
+
+    async def get_items(self) -> list[dict]:
+        return await self._get_all_pages("/items")
+
+    async def get_monsters(self) -> list[dict]:
+        return await self._get_all_pages("/monsters")

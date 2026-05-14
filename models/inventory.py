@@ -30,7 +30,4 @@ class Inventory:
                 return
 
     def is_full(self) -> bool:
-        cpt = 0
-        for item in self.items:
-            cpt += item.quantity
-        return cpt >= self.max_items
+        return sum(i.quantity for i in self.items) >= self.max_items

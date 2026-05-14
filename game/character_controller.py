@@ -3,15 +3,20 @@ import logging
 from datetime import datetime, timezone
 
 from models import Character
+from services.deposit import DepositService
 from tasks.base_task import Task
 
+
+from tasks.exceptions import InventoryFullError
+from tasks.deposit_task import DepositTask
 
 logger = logging.getLogger(__name__)
 
 
 class CharacterController:
-    def __init__(self, character: Character):
+    def __init__(self, character: Character, deposit_service: DepositService):
         self.character = character
+        self.deposit_service = deposit_service
         self.priority_task: Task | None = None
         self.todo_task: Task | None = None
         self.default_routine = None
@@ -30,12 +35,10 @@ class CharacterController:
         now = datetime.now(timezone.utc)
         remaining = (expiration - now).total_seconds()
         if remaining > 0:
-            # logger.debug("%s attend cooldown %.1fs", self.character.name, remaining)
             await asyncio.sleep(remaining)
 
     async def main_loop(self):
         while True:
-            await asyncio.sleep(3)
             await self._wait_cooldown()
 
             if self.priority_task:
@@ -74,8 +77,14 @@ class CharacterController:
                     elif source == "TODO":
                         self.todo_task = None
 
+            except InventoryFullError:
+                logger.debug(f"INJECT DEPOSIT TASK pour {self.character.name}")
+                self.priority_task = DepositTask(self.deposit_service)
+                logger.debug(f"priority_task = {self.priority_task}")
+
             except Exception as e:
-                logger.error("%s — erreur : %s", self.character.name, e)
+                logger.error("%s — erreur : %s", self.character.name, str(e))
+                await asyncio.sleep(1)
                 if not active_task.retry_on_fail:
                     if source == "PRIORITY":
                         self.priority_task = None

@@ -1,9 +1,10 @@
 import asyncio
-import logging
 import os
+import sys
+import logging
 from dotenv import load_dotenv
-from api import ApiClient
-from api import ArtifactsGateway
+from api import ApiClient, ArtifactsGateway
+from data.world import World
 from game import GameManager
 
 load_dotenv()
@@ -14,18 +15,19 @@ ACCOUNT = os.getenv("ACCOUNT")
 
 
 async def main():
-    # logging.basicConfig(level=0)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
     client = ApiClient(token=ARTIFACTS_TOKEN, base_url=API_URL)
-    artifacts_gateway = ArtifactsGateway(client)
+    gateway = ArtifactsGateway(client)
 
-    characters = await artifacts_gateway.get_account_characters(ACCOUNT)
-    await artifacts_gateway.get_all_characters([c.name for c in characters])
-    # --- SYNC INITIAL ---
-    for c in characters:
-        await artifacts_gateway.get_character(c)  # <-- IMPORTANT
+    force_refresh = "--refresh" in sys.argv
+    world = World()
+    await world.load(gateway, force_refresh=force_refresh)
 
-    manager = GameManager(characters, artifacts_gateway)
+    characters = await gateway.get_account_characters(ACCOUNT)
 
+    manager = GameManager(characters, gateway, world)
     await manager.start()
 
 

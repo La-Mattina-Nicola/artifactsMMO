@@ -1,10 +1,8 @@
-# bot_completer.py
-
 from prompt_toolkit.completion import Completer, Completion
 
 
 class BotCompleter(Completer):
-    def __init__(self, character_names: list[str]):
+    def __init__(self, character_names: list[str], drop_codes: list[str]):
         self.character_names = character_names
         self.commands = {
             "status": [],
@@ -14,6 +12,7 @@ class BotCompleter(Completer):
             "farm": character_names,
             "stop": character_names,
         }
+        self.farm_drops = drop_codes
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor.split()
@@ -34,3 +33,13 @@ class BotCompleter(Completer):
             for arg in self.commands.get(cmd, []):
                 if arg.startswith(word):
                     yield Completion(arg, start_position=-len(word))
+
+        elif len(text) == 2 or (
+            len(text) == 3 and not document.text_before_cursor.endswith(" ")
+        ):
+            cmd = text[0]
+            word = text[2] if len(text) == 3 else ""
+            if cmd == "farm":
+                for drop in self.farm_drops:
+                    if drop.startswith(word):
+                        yield Completion(drop, start_position=-len(word))

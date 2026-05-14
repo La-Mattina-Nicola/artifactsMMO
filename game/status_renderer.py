@@ -13,12 +13,10 @@ def render_status_table(characters: dict[str, "Character"]) -> str:
     lines = []
     lines.append("")
 
-    # Nom + lvl
     row = f"{'Nom/Lvl':<12}: "
     row += " | ".join(col(f"{c.name:<10}   lv.{c.level}") for c in chars)
     lines.append(row)
 
-    # HP & POS
     row = f"{'HP & POS':<12}: "
     row += " | ".join(
         col(f"{c.stats.hp}/{c.stats.max_hp:<7} [{c.position.x},{c.position.y}]")
@@ -26,14 +24,12 @@ def render_status_table(characters: dict[str, "Character"]) -> str:
     )
     lines.append(row)
 
-    # Position
     row = f"{'Task ':<12}: "
     row += " | ".join(
         col(f"{c.task}") for c in chars if c.task and c.task.type != "idle"
     )
     lines.append(row)
 
-    # Cooldown
     row = f"{'Cooldown':<12}: "
     row += " | ".join(col(cooldown_bar(c)) for c in chars)
     lines.append(row)

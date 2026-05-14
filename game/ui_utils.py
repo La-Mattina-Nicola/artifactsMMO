@@ -1,6 +1,3 @@
-# ui_utils.py
-
-# Suppression des codes ANSI qui causaient les bugs
 def color(text, c=None):
     return f"{text}"
 
