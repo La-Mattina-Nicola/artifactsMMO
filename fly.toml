@@ -1,0 +1,18 @@
+# fly.toml app configuration file generated for kioyaa-artifactsmmo on 2026-05-16T00:58:59+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'kioyaa-artifactsmmo'
+primary_region = 'cdg'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[[services]]
+  internal_port = 8080
+  processes = ['worker']
+
+  
+[processes]
+  worker = 'python main.py --headless'
