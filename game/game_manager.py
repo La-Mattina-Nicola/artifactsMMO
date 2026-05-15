@@ -239,11 +239,11 @@ class GameManager:
 
         if qty is None:
             controller.set_default(routine)
-            self.log(f"{name} farm {drop_code} en boucle")
+            self.log(f"{name:<10} farm {drop_code:<20} en boucle")
         else:
             condition = make_goal_condition(drop_code, qty)
             controller.set_todo(GoalTask(routine, condition))
-            self.log(f"{name} farm {drop_code} jusqu'à {qty}")
+            self.log(f"{name:<10} farm {drop_code:<20} jusqu'à {qty}")
 
     async def _cmd_stop(self, args):
         if len(args) != 1:
