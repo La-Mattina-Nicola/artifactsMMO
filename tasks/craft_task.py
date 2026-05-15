@@ -28,7 +28,8 @@ class CraftTask(Task):
     ):
         super().__init__()
         self.item = item
-        self.quantity = quantity
+        self.total_quantity = quantity
+        self.crafted = 0
         self.bank_service = bank_service
         self.craft_service = craft_service
         self.movement_service = movement_service
@@ -41,7 +42,7 @@ class CraftTask(Task):
                 logger.warning("L'item %s n'est pas craftable", self.item.name)
                 return True
             has_resources = await self.bank_service.has_ingredients(
-                self.item, self.quantity
+                self.item, self.total_quantity
             )
             if not has_resources:
                 logger.warning(
@@ -87,8 +88,12 @@ class CraftTask(Task):
                 self.item.code,
                 self.quantity,
             )
+            remaining = self.total_quantity - self.crafted
+            max_batch = self._max_batch_size(character)
+            self.current_batch = min(remaining, max_batch)
+
             await self.bank_service.withdraw_ingredients(
-                character, self.item, self.quantity
+                character, self.item, self.current_batch
             )
             self._step = 4
             return False
@@ -112,14 +117,17 @@ class CraftTask(Task):
 
         # Step 5 — crafter
         if self._step == 5:
-            logger.debug({self.item.code: self.quantity})
-            logger.debug(
-                "%s — step 5 : craft %s x%d",
-                character.name,
-                self.item.code,
-                self.quantity,
+            await self.craft_service.craft(character, self.item, self.current_batch)
+            self.crafted += self.current_batch
+            logger.info(
+                f"{character.name} a crafté {self.current_batch}x {self.item.code}"
             )
-            logger.error("Crafting %s x%d", self.item.code, self.quantity)
-            await self.craft_service.craft(character, self.item, self.quantity)
-            logger.info(f"{character.name} a crafté {self.quantity}x {self.item.code}")
-            return True
+            if self.crafted >= self.total_quantity:
+                return True
+            self._step = 1
+            return False
+
+    def _max_batch_size(self, character: Character) -> int:
+        inventory_space = character.inventory.max_items
+        ingredients_per_craft = sum(i.quantity for i in self.item.craft.items)
+        return max(1, inventory_space // ingredients_per_craft)

@@ -1,0 +1,22 @@
+{
+  "Kioyaa": {
+    "default": "farm",
+    "args": ["iron_ore"]
+  },
+  "Kioyaa_g": {
+    "default": "farm",
+    "args": ["coal"]
+  },
+  "Kio_wood": {
+    "default": "farm",
+    "args": ["ash_wood"]
+  },
+  "Kio_fish": {
+    "default": "farm",
+    "args": ["ash_wood"]
+  },
+  "Kio_util": {
+    "default": "farm",
+    "args": ["gudgeon"]
+  }
+}

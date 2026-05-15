@@ -15,13 +15,13 @@ from data.world import World
 from game import BotCompleter
 from game.status_renderer import render_status_table
 from services import MovementService, GatherService, CraftingService
-from services.banking import BankService
 from services.deposit import DepositService
 from tasks import MoveToTask, GoalTask
 from routines import GatheringRoutine
 from game import CharacterController
 from tasks.craft_task import CraftTask
-
+import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class TextAreaHandler(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        if self.manager.app:
+        if self.manager.app and self.manager.app.loop:  # ← vérifier que loop existe
             self.manager.app.loop.call_soon_threadsafe(lambda: self.manager.log(msg))
 
 
@@ -318,11 +318,38 @@ class GameManager:
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))
 
+    async def load_defaults(self):
+        config_file = Path("config/characters.json")
+        if not config_file.exists():
+            logger.info("Pas de config de defaults trouvée")
+            return
+
+        config = json.loads(config_file.read_text())
+        for name, settings in config.items():
+            if name not in self.controllers:
+                logger.warning(f"Perso inconnu dans config : {name}")
+                continue
+
+            command = settings.get("default")
+            args = [name] + settings.get("args", [])
+
+            if command == "farm":
+                await self._cmd_farm(args)
+            elif command == "craft":
+                await self._cmd_craft(args)
+
+            logger.info(f"{name:<10} — default chargé : {command:<7} {args}")
+
     async def start(self):
+        asyncio.create_task(self._startup())
         await asyncio.gather(
             self.app.run_async(),
             self._controllers_loop(),
         )
+
+    async def _startup(self):
+        await asyncio.sleep(0.5)
+        await self.load_defaults()
 
 
 def make_goal_condition(resource_drop: str, qty: int):

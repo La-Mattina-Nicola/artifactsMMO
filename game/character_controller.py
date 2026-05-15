@@ -81,6 +81,8 @@ class CharacterController:
 
             except (InventoryFullError, InventoryNotEmptyError):
                 logger.debug(f"INJECT DEPOSIT TASK pour {self.character.name}")
+                if self.priority_task is None:
+                    self.priority_task = []
                 self.priority_task.append(DepositTask(self.deposit_service))
                 logger.debug(f"priority_task = {self.priority_task}")
 
