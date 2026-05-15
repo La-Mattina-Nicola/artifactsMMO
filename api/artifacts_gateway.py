@@ -55,6 +55,45 @@ class ArtifactsGateway:
             raise Exception(f"API error {code}: {message}")
         return data
 
+    async def _get_all_pages(self, endpoint: str) -> list[dict]:
+        results = []
+        page = 1
+
+        while True:
+            response = await self.api_client.get(
+                endpoint, params={"page": page, "size": 50}
+            )
+            data = response.json()
+            results.extend(data["data"])
+
+            if page >= data["pages"]:
+                break
+            page += 1
+
+        logger.debug("%s — %d entrées chargées", endpoint, len(results))
+        return results
+
+    # --- Méthodes pour récupérer les données de base (maps, ressources, items, monstres, bank) ---
+    async def get_maps(self) -> list[dict]:
+        return await self._get_all_pages("/maps")
+
+    async def get_resources(self) -> list[dict]:
+        return await self._get_all_pages("/resources")
+
+    async def get_items(self) -> list[dict]:
+        return await self._get_all_pages("/items")
+
+    async def get_monsters(self) -> list[dict]:
+        return await self._get_all_pages("/monsters")
+
+    async def get_bank_items(self) -> list[dict]:
+        return await self._get_all_pages("/my/bank/items")
+
+    async def get_bank(self) -> dict:
+        response = await self.api_client.get(f"/my/bank")
+        print(f"Bank response: {response}")
+        return response.json()
+
     @sync_character
     async def get_account_characters(self, account: str) -> list[Character]:
         response = await self.api_client.get(f"/accounts/{account}/characters")
@@ -87,6 +126,20 @@ class ArtifactsGateway:
         return response.json()
 
     @sync_character
+    async def craft(self, name: str, item_id: int, quantity: int) -> dict:
+        logger.debug(
+            "Crafting request: character=%s, item_id=%d, quantity=%d",
+            name,
+            item_id,
+            quantity,
+        )
+        response = await self.api_client.post(
+            f"/my/{name}/action/crafting",
+            json={"code": item_id, "quantity": quantity},
+        )
+        return response.json()
+
+    @sync_character
     async def deposit_items(self, name: str, items: list[dict]) -> dict:
         response = await self.api_client.post(
             f"/my/{name}/action/bank/deposit/item",
@@ -94,32 +147,10 @@ class ArtifactsGateway:
         )
         return response.json()
 
-    async def _get_all_pages(self, endpoint: str) -> list[dict]:
-        results = []
-        page = 1
-
-        while True:
-            response = await self.api_client.get(
-                endpoint, params={"page": page, "size": 50}
-            )
-            data = response.json()
-            results.extend(data["data"])
-
-            if page >= data["pages"]:
-                break
-            page += 1
-
-        logger.debug("%s — %d entrées chargées", endpoint, len(results))
-        return results
-
-    async def get_maps(self) -> list[dict]:
-        return await self._get_all_pages("/maps")
-
-    async def get_resources(self) -> list[dict]:
-        return await self._get_all_pages("/resources")
-
-    async def get_items(self) -> list[dict]:
-        return await self._get_all_pages("/items")
-
-    async def get_monsters(self) -> list[dict]:
-        return await self._get_all_pages("/monsters")
+    @sync_character
+    async def withdraw_items(self, name: str, items: list[dict]) -> dict:
+        response = await self.api_client.post(
+            f"/my/{name}/action/bank/withdraw/item",
+            json=items,
+        )
+        return response.json()

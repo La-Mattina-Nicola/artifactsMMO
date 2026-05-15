@@ -1,16 +1,17 @@
-from venv import logger
-
+import logging
 from models import Character
 from services.gathering import GatherService
 from tasks import Task
 from tasks.exceptions import InventoryFullError
 
 
+logger = logging.getLogger(__name__)
+
+
 class GatherTask(Task):
-    def __init__(self, node, gathering_service: GatherService, deposit_service=None):
+    def __init__(self, node, gathering_service: GatherService):
         self.node = node
         self.gathering_service = gathering_service
-        self.deposit_service = deposit_service
 
     async def execute_step(self, character: Character) -> bool:
         if character.inventory.is_full():
@@ -29,7 +30,3 @@ class GatherTask(Task):
             self.node.content_code,
         )
         return True
-
-    def _inventory_full(self, character) -> bool:
-        total = sum(i.quantity for i in character.inventory.items)
-        return total >= character.inventory.max_items

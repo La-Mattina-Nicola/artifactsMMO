@@ -38,19 +38,19 @@ def render_status_table(characters: dict[str, "Character"]) -> str:
     lines.append("-" * 53 + " METIERS " + "-" * 53)
 
     professions = [
-        ("⛏️", lambda c: c.skills.mining),
-        ("🪓", lambda c: c.skills.woodcutting),
-        ("🎣", lambda c: c.skills.fishing),
-        ("🗡️", lambda c: c.skills.weaponcrafting),
-        ("🔨", lambda c: c.skills.gearcrafting),
-        ("💎", lambda c: c.skills.jewelrycrafting),
-        ("🍳", lambda c: c.skills.cooking),
-        ("⚗️", lambda c: c.skills.alchemy),
+        ("⛏️  Mining", lambda c: c.skills.mining),
+        ("🪓 Woodcut..", lambda c: c.skills.woodcutting),
+        ("🎣 Fishing", lambda c: c.skills.fishing),
+        ("🗡️  Weapon", lambda c: c.skills.weaponcrafting),
+        ("🔨 Gear", lambda c: c.skills.gearcrafting),
+        ("💎 Jewel", lambda c: c.skills.jewelrycrafting),
+        ("🍳 Cooking", lambda c: c.skills.cooking),
+        ("⚗️  Alchemy", lambda c: c.skills.alchemy),
     ]
 
     for label, getter in professions:
         label_title = ""
-        if label == "⛏️" or label == "🗡️" or label == "⚗️":
+        if label == "⛏️  Mining" or label == "🗡️  Weapon" or label == "⚗️  Alchemy":
             label_title = f"{label:<13}"
         else:
             label_title = f"{label:<11}"

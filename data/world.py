@@ -26,6 +26,8 @@ class World:
         self.resources: dict[str, Resource] = {}  # clé: resource.code
         self.items: dict[str, Item] = {}  # clé: item.code
         self.monsters: dict[str, Monster] = {}  # clé: monster.code
+        self.banks: list[tuple[int, int]] = []  # chargé depuis les maps
+        self.workshops: dict[str, tuple[int, int]] = {}  # chargé depuis les maps
 
     # -------------------------
     # Chargement principal
@@ -53,6 +55,13 @@ class World:
         self.maps = {}
         for d in raw:
             content = d.get("interactions", {}).get("content") or {}
+            content_type = content.get("type")
+            content_code = content.get("code")
+            if content_type == "bank":
+                self.banks.append((d["x"], d["y"]))
+            if content_type == "workshop":
+                self.workshops[content_code] = (d["x"], d["y"])
+
             tile = MapTile(
                 map_id=d["map_id"],
                 name=d["name"],

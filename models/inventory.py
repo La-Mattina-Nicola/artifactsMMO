@@ -31,3 +31,6 @@ class Inventory:
 
     def is_full(self) -> bool:
         return sum(i.quantity for i in self.items) >= self.max_items
+
+    def is_empty(self) -> bool:
+        return sum(i.quantity for i in self.items) == 0

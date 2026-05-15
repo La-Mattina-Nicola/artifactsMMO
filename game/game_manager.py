@@ -11,13 +11,16 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.layout.containers import FloatContainer, Float
 from prompt_toolkit.layout.menus import CompletionsMenu
 from prompt_toolkit.widgets import Frame
+from data.world import World
 from game import BotCompleter
 from game.status_renderer import render_status_table
 from services import MovementService, GatherService, CraftingService
+from services.banking import BankService
 from services.deposit import DepositService
 from tasks import MoveToTask, GoalTask
 from routines import GatheringRoutine
 from game import CharacterController
+from tasks.craft_task import CraftTask
 
 
 logger = logging.getLogger(__name__)
@@ -35,27 +38,26 @@ class TextAreaHandler(logging.Handler):
 
 
 class GameManager:
-    def __init__(self, characters, gateway, world):
+    def __init__(self, characters, gateway, world: "World", bank_service):
+        self.gateway = gateway
         self.world = world
-        kb = KeyBindings()
+        self.bank_service = bank_service
+        self.movement_service = MovementService(gateway)
+        self.gathering_service = GatherService(gateway)
+        self.crafting_service = CraftingService(gateway, self.world)
+
+        self.characters = {c.name: c for c in characters}
 
         self.log_handler = TextAreaHandler(self)
         self.log_handler.setFormatter(logging.Formatter("%(name)s — %(message)s"))
-
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_handler)
         root_logger.setLevel(logging.INFO)  # LEVEL LOGGING
 
-        self.characters = {c.name: c for c in characters}
-        self.gateway = gateway
-
-        self.movement_service = MovementService(gateway)
-        self.gathering_service = GatherService(gateway)
-        self.crafting_service = CraftingService(gateway)
-
         self._completer = BotCompleter(
             list(self.characters.keys()),
             [drop.code for r in self.world.resources.values() for drop in r.drops],
+            [code for code, item in self.world.items.items() if item.craft is not None],
         )
 
         self.deposit_service = DepositService(gateway, self.movement_service)
@@ -71,16 +73,16 @@ class GameManager:
             wrap_lines=False,
             read_only=False,
         )
-
         self.status_control = FormattedTextControl(self._status_content)
         self.status_window = Window(
-            content=FormattedTextControl(self._status_content),
+            content=FormattedTextControl(
+                self._status_content,
+                focusable=False,
+            ),
             width=116,
             dont_extend_width=True,
         )
-
         self.input_buffer = Buffer(completer=self._completer)
-
         self.input_field = TextArea(
             height=1,
             prompt="> ",
@@ -90,7 +92,6 @@ class GameManager:
             accept_handler=self._on_input_accept,
             complete_while_typing=True,
         )
-
         body_layout = HSplit(
             [
                 VSplit(
@@ -115,6 +116,10 @@ class GameManager:
 
         kb = KeyBindings()
 
+        @kb.add("c-l")  # Ctrl+L → focus logs
+        def _(event):
+            event.app.layout.focus(self.log_area)
+
         @kb.add("c-c")
         def _(event):
             self._stop_event.set()
@@ -135,6 +140,7 @@ class GameManager:
             full_screen=True,
             refresh_interval=0.5,
             style=ui_style,
+            mouse_support=True,
         )
 
     def _setup_kb(self):
@@ -168,6 +174,8 @@ class GameManager:
             "quit": self._cmd_quit,
             "move": self._cmd_move,
             "farm": self._cmd_farm,
+            "craft": self._cmd_craft,
+            "bank": self._cmd_bank,
             "stop": self._cmd_stop,
         }
         handler = handlers.get(command)
@@ -181,12 +189,14 @@ class GameManager:
 
     async def _cmd_help(self, args):
         self.log("Commandes disponibles :")
-        self.log("  status                    — rafraîchit le panneau STATUS")
         self.log("  help                      — affiche cette aide")
-        self.log("  quit                      — arrête le bot")
+        self.log("  status                    — rafraîchit le panneau STATUS")
+        self.log("  bank                      — effectue un dépôt complet à la banque")
         self.log("  move <name> <x> <y>       — déplace un personnage")
         self.log("  farm <name> <node> [qty]  — commence à farm des ressources")
+        self.log("  craft <name> <item> <qty> — craft un item depuis la banque")
         self.log("  stop <name>               — arrête la tâche en cours")
+        self.log("  quit                      — arrête le bot")
 
     async def _cmd_quit(self, args):
         self.log("Arrêt demandé…")
@@ -261,6 +271,49 @@ class GameManager:
         c.default_routine = None
 
         self.log(f"{name} arrêté.")
+
+    async def _cmd_bank(self, args):
+        if not self.bank_service.items:
+            self.log("Banque vide ou non chargée.")
+            return
+
+        self.log(f"{'Item':<30} {'Quantité':>10}")
+        self.log("-" * 42)
+        for code, qty in sorted(
+            self.bank_service.items.items(), key=lambda x: x[1], reverse=False
+        ):
+            self.log(f"{code:<30} {qty:>10}")
+
+    async def _cmd_craft(self, args):
+        # craft <name> <item_code> <quantity>
+        if len(args) != 3:
+            self.log("Usage : craft <name> <item_code> <quantity>")
+            return
+
+        name, item_code, quantity = args[0], args[1], int(args[2])
+
+        if name not in self.controllers:
+            self.log(f"Personnage inconnu : {name}")
+            return
+
+        item = self.world.items.get(item_code)
+        if item is None:
+            self.log(f"Item inconnu : {item_code}")
+            return
+
+        if item.craft is None:
+            self.log(f"{item_code} n'est pas craftable")
+            return
+
+        task = CraftTask(
+            item=item,
+            quantity=quantity,
+            bank_service=self.bank_service,
+            craft_service=self.crafting_service,
+            movement_service=self.movement_service,
+        )
+        self.controllers[name].set_priority(task)
+        self.log(f"{name} craft {quantity}x {item.name}")
 
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))

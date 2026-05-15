@@ -2,17 +2,22 @@ from prompt_toolkit.completion import Completer, Completion
 
 
 class BotCompleter(Completer):
-    def __init__(self, character_names: list[str], drop_codes: list[str]):
+    def __init__(
+        self, character_names: list[str], drop_codes: list[str], craft_items: list[str]
+    ):
         self.character_names = character_names
         self.commands = {
-            "status": [],
             "help": [],
-            "quit": [],
+            "status": [],
+            "bank": [],
             "move": character_names,
             "farm": character_names,
+            "craft": character_names,
             "stop": character_names,
+            "quit": [],
         }
         self.farm_drops = drop_codes
+        self.craft_items = craft_items
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor.split()
@@ -40,6 +45,12 @@ class BotCompleter(Completer):
             cmd = text[0]
             word = text[2] if len(text) == 3 else ""
             if cmd == "farm":
-                for drop in self.farm_drops:
-                    if drop.startswith(word):
-                        yield Completion(drop, start_position=-len(word))
+                candidates = self.farm_drops
+            elif cmd == "craft":
+                candidates = self.craft_items
+            else:
+                candidates = []
+
+            for c in candidates:
+                if c.startswith(word):
+                    yield Completion(c, start_position=-len(word))

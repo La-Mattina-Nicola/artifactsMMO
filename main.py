@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from api import ApiClient, ArtifactsGateway
 from data.world import World
 from game import GameManager
+from services.banking import BankService
 
 load_dotenv()
 
@@ -17,6 +18,13 @@ ACCOUNT = os.getenv("ACCOUNT")
 async def main():
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.basicConfig(
+        level=logging.CRITICAL,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[
+            logging.FileHandler("bot.log", encoding="utf-8"),  # ← fichier
+        ],
+    )
 
     client = ApiClient(token=ARTIFACTS_TOKEN, base_url=API_URL)
     gateway = ArtifactsGateway(client)
@@ -25,9 +33,12 @@ async def main():
     world = World()
     await world.load(gateway, force_refresh=force_refresh)
 
+    bank_service = BankService(gateway, world)
+    await bank_service.load()
+
     characters = await gateway.get_account_characters(ACCOUNT)
 
-    manager = GameManager(characters, gateway, world)
+    manager = GameManager(characters, gateway, world, bank_service)
     await manager.start()
 
 
