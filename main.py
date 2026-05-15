@@ -22,7 +22,7 @@ async def main():
         level=logging.CRITICAL,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         handlers=[
-            logging.FileHandler("bot.log", encoding="utf-8"),  # ← fichier
+            logging.FileHandler("bot.log", encoding="utf-8"),
         ],
     )
 

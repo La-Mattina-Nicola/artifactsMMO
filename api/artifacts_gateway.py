@@ -1,3 +1,5 @@
+import logging
+
 from dotenv.main import logger
 from api import ApiClient
 from models.character import Character
@@ -15,6 +17,15 @@ def sync_character(func):
             return response_data
 
         data = response_data.get("data", {})
+
+        drops_logger = logging.getLogger("✅")
+
+        details = data.get("details", {}) if isinstance(data, dict) else {}
+        items = details.get("items", [])
+        xp = details.get("xp", 0)
+        if items:
+            drops_str = ", ".join(f"{i['quantity']}x {i['code']}" for i in items)
+            drops_logger.info(f"{character.name:<10} — {drops_str} (+{xp} xp)")
 
         # --- Format 1 : data.character ---
         if isinstance(data, dict) and "character" in data:

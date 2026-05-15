@@ -9,7 +9,7 @@
   },
   "Kio_wood": {
     "default": "farm",
-    "args": ["ash_wood"]
+    "args": ["birch_wood"]
   },
   "Kio_fish": {
     "default": "farm",
