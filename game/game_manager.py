@@ -1,5 +1,8 @@
 import asyncio
 import logging
+from game.bot_completer import BotCompleter
+from game.base_manager import BaseManager
+from game.status_renderer import render_status_table
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import Layout, HSplit, VSplit, Window
@@ -12,16 +15,10 @@ from prompt_toolkit.layout.containers import FloatContainer, Float
 from prompt_toolkit.layout.menus import CompletionsMenu
 from prompt_toolkit.widgets import Frame
 from data.world import World
-from game import BotCompleter
-from game.status_renderer import render_status_table
-from services import MovementService, GatherService, CraftingService
 from services.deposit import DepositService
 from tasks import MoveToTask, GoalTask
 from routines import GatheringRoutine
-from game import CharacterController
 from tasks.craft_task import CraftTask
-import json
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +34,9 @@ class TextAreaHandler(logging.Handler):
             self.manager.app.loop.call_soon_threadsafe(lambda: self.manager.log(msg))
 
 
-class GameManager:
+class GameManager(BaseManager):
     def __init__(self, characters, gateway, world: "World", bank_service):
-        self.gateway = gateway
-        self.world = world
-        self.bank_service = bank_service
-        self.movement_service = MovementService(gateway)
-        self.gathering_service = GatherService(gateway)
-        self.crafting_service = CraftingService(gateway, self.world)
-
-        self.characters = {c.name: c for c in characters}
+        super().__init__(characters, gateway, world, bank_service)
 
         self.log_handler = TextAreaHandler(self)
         self.log_handler.setFormatter(logging.Formatter("%(name)s — %(message)s"))
@@ -61,9 +51,6 @@ class GameManager:
         )
 
         self.deposit_service = DepositService(gateway, self.movement_service)
-        self.controllers = {
-            c.name: CharacterController(c, self.deposit_service) for c in characters
-        }
 
         self._stop_event = asyncio.Event()
 
@@ -249,7 +236,7 @@ class GameManager:
 
         if qty is None:
             controller.set_default(routine)
-            self.log(f"{name:<10} farm {drop_code:<20} en boucle")
+            self.log(f"🎯 — {name:<10} farm {drop_code:<20} en boucle")
         else:
             condition = make_goal_condition(drop_code, qty)
             controller.set_todo(GoalTask(routine, condition))
@@ -317,28 +304,6 @@ class GameManager:
 
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))
-
-    async def load_defaults(self):
-        config_file = Path("config/characters.json")
-        if not config_file.exists():
-            logger.info("Pas de config de defaults trouvée")
-            return
-
-        config = json.loads(config_file.read_text())
-        for name, settings in config.items():
-            if name not in self.controllers:
-                logger.warning(f"Perso inconnu dans config : {name}")
-                continue
-
-            command = settings.get("default")
-            args = [name] + settings.get("args", [])
-
-            if command == "farm":
-                await self._cmd_farm(args)
-            elif command == "craft":
-                await self._cmd_craft(args)
-
-            logger.info(f"{name:<10} — default chargé : {command:<7} {args}")
 
     async def start(self):
         asyncio.create_task(self._startup())

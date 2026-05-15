@@ -1,5 +1,4 @@
 import logging
-
 from dotenv.main import logger
 from api import ApiClient
 from models.character import Character
@@ -24,8 +23,9 @@ def sync_character(func):
         items = details.get("items", [])
         xp = details.get("xp", 0)
         if items:
-            drops_str = ", ".join(f"{i['quantity']}x {i['code']}" for i in items)
-            drops_logger.info(f"{character.name:<10} — {drops_str} (+{xp} xp)")
+            drops_str = " | ".join(f"{i['quantity']}x {i['code']}" for i in items)
+            xp_str = f"{xp:>4} xp"
+            drops_logger.info(f"{character.name:<10} — {xp_str:<8} — {drops_str}")
 
         # --- Format 1 : data.character ---
         if isinstance(data, dict) and "character" in data:
@@ -54,6 +54,7 @@ def sync_character(func):
 class ArtifactsGateway:
     def __init__(self, api_client: ApiClient):
         self.api_client = api_client
+        self.drops_logger = logging.getLogger("⚙️")
 
     @sync_character
     async def _handle_response(self, response) -> dict:
@@ -81,7 +82,7 @@ class ArtifactsGateway:
                 break
             page += 1
 
-        logger.debug("%s — %d entrées chargées", endpoint, len(results))
+        self.drops_logger.debug("%s — %d entrées chargées", endpoint, len(results))
         return results
 
     # --- Méthodes pour récupérer les données de base (maps, ressources, items, monstres, bank) ---
@@ -102,7 +103,7 @@ class ArtifactsGateway:
 
     async def get_bank(self) -> dict:
         response = await self.api_client.get(f"/my/bank")
-        print(f"Bank response: {response}")
+        self.drops_logger.debug(f"Bank response: {response}")
         return response.json()
 
     @sync_character

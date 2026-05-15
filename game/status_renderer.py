@@ -35,7 +35,7 @@ def render_status_table(characters: dict[str, "Character"]) -> str:
     lines.append(row)
 
     lines.append("")
-    lines.append("-" * 53 + " METIERS " + "-" * 53)
+    lines.append("—" * 52 + "| METIERS |" + "—" * 52)
 
     professions = [
         ("⛏️  Mining", lambda c: c.skills.mining),

@@ -9,7 +9,6 @@ class CraftingService:
         self.world = world
 
     async def craft(self, character: Character, item: Item, quantity: int = 1):
-        print(f"Crafting {item.code} x{quantity} for {character.name}")
         dto = await self.gateway.craft(character.name, item.code, quantity)
         character.update_from_dto({"data": dto["data"]["character"]})
 

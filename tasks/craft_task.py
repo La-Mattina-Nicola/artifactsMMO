@@ -86,7 +86,7 @@ class CraftTask(Task):
                 "%s — step 3 : withdraw %s x%d",
                 character.name,
                 self.item.code,
-                self.quantity,
+                self.total_quantity,
             )
             remaining = self.total_quantity - self.crafted
             max_batch = self._max_batch_size(character)
