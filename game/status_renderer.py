@@ -1,4 +1,3 @@
-# status_renderer.py
 from models.character import Character
 from game.ui_utils import percent, cooldown_bar
 

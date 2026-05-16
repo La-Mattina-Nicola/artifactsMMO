@@ -18,7 +18,6 @@ def setup_logging(headless: bool):
     handlers = []
 
     if headless:
-        # En headless : log dans un fichier aussi
         handlers.append(logging.StreamHandler(sys.stdout))
         handlers.append(logging.FileHandler("bot.log", encoding="utf-8"))
 
@@ -39,23 +38,19 @@ async def main():
 
     logger = logging.getLogger(__name__)
     logger.info("Démarrage — mode %s", "headless" if headless else "UI")
-    # Infrastructure
+
     client = ApiClient(token=ARTIFACTS_TOKEN, base_url=API_URL)
     gateway = ArtifactsGateway(client)
 
-    # World
     force_refresh = "--refresh" in sys.argv
     world = World()
     await world.load(gateway, force_refresh=force_refresh)
 
-    # Bank
     bank_service = BankService(gateway, world)
     await bank_service.load()
 
-    # Characters
     characters = await gateway.get_account_characters(ACCOUNT)
 
-    # Manager
     if headless:
         from game.headless_manager import HeadlessManager
 

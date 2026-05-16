@@ -29,9 +29,6 @@ class World:
         self.banks: list[tuple[int, int]] = []  # chargé depuis les maps
         self.workshops: dict[str, tuple[int, int]] = {}  # chargé depuis les maps
 
-    # -------------------------
-    # Chargement principal
-    # -------------------------
     async def load(self, gateway, force_refresh: bool = False):
         await asyncio.gather(
             self._load_maps(gateway, force_refresh),
@@ -47,9 +44,6 @@ class World:
             len(self.monsters),
         )
 
-    # -------------------------
-    # Maps
-    # -------------------------
     async def _load_maps(self, gateway, force_refresh: bool = False):
         raw = await self._fetch_or_cache("maps", gateway.get_maps, force_refresh)
         self.maps = {}

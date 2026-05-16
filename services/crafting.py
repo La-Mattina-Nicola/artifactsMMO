@@ -12,7 +12,6 @@ class CraftingService:
         dto = await self.gateway.craft(character.name, item.code, quantity)
         character.update_from_dto({"data": dto["data"]["character"]})
 
-    # crafting.py — reçoit Item directement, pas besoin de lookup
     async def get_workshop(self, item: Item) -> tuple[int, int]:
         skill = item.craft.skill
         coords = self.world.workshops.get(skill)

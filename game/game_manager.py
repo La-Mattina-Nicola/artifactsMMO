@@ -30,7 +30,7 @@ class TextAreaHandler(logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        if self.manager.app and self.manager.app.loop:  # ← vérifier que loop existe
+        if self.manager.app and self.manager.app.loop:
             self.manager.app.loop.call_soon_threadsafe(lambda: self.manager.log(msg))
 
 
@@ -103,14 +103,16 @@ class GameManager(BaseManager):
 
         kb = KeyBindings()
 
+        self.focus_input = True
+
         @kb.add("c-l")  # Ctrl+L → focus logs
         def _(event):
-            event.app.layout.focus(self.log_area)
-
-        @kb.add("c-c")
-        def _(event):
-            self._stop_event.set()
-            event.app.exit()
+            if self.focus_input:
+                event.app.layout.focus(self.log_area)
+                self.focus_input = False
+            else:
+                event.app.layout.focus(self.input_field)
+                self.focus_input = True
 
         ui_style = Style.from_dict(
             {
@@ -272,7 +274,6 @@ class GameManager(BaseManager):
             self.log(f"{code:<30} {qty:>10}")
 
     async def _cmd_craft(self, args):
-        # craft <name> <item_code> <quantity>
         if len(args) != 3:
             self.log("Usage : craft <name> <item_code> <quantity>")
             return

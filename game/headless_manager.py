@@ -30,7 +30,6 @@ class HeadlessManager(BaseManager):
             try:
                 loop.add_signal_handler(sig, _handle_signal)
             except NotImplementedError:
-                # Windows ne supporte pas add_signal_handler
                 pass
 
     async def start(self):
@@ -40,7 +39,6 @@ class HeadlessManager(BaseManager):
         await asyncio.sleep(0.5)
         await self.load_defaults()
 
-        # Lancer les boucles — s'arrête quand _stop_event est set
         await asyncio.gather(
             self._controllers_loop(),
             self._watch_stop(),
@@ -49,7 +47,6 @@ class HeadlessManager(BaseManager):
 
     async def _watch_stop(self):
         await self._stop_event.wait()
-        # Annuler toutes les tâches en cours
         tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
         for task in tasks:
             task.cancel()

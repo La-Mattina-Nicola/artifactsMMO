@@ -36,15 +36,12 @@ class BaseManager:
         self.movement_service = MovementService(gateway)
         self.gathering_service = GatherService(gateway)
         self.crafting_service = CraftingService(gateway, world)
-        self.deposit_service = DepositService(gateway, self.movement_service)
+        self.deposit_service = DepositService(gateway, self.movement_service, world)
 
         self.controllers = {
             c.name: CharacterController(c, self.deposit_service) for c in characters
         }
 
-    # -------------------------
-    # Commandes métier
-    # -------------------------
     async def cmd_farm(self, name: str, drop_code: str, qty: int | None = None):
         if name not in self.controllers:
             logger.warning("Perso inconnu : %s", name)
@@ -115,9 +112,6 @@ class BaseManager:
         c.default_routine = None
         logger.info("%s — arrêté", name)
 
-    # -------------------------
-    # Defaults depuis config
-    # -------------------------
     async def load_defaults(self):
         config_file = Path("config/characters.json")
         if not config_file.exists():
@@ -143,9 +137,6 @@ class BaseManager:
 
             logger.info("%s — default chargé : %s %s", name, command, args)
 
-    # -------------------------
-    # Boucles
-    # -------------------------
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))
 

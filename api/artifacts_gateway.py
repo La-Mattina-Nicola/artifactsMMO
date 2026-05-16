@@ -56,17 +56,6 @@ class ArtifactsGateway:
         self.api_client = api_client
         self.drops_logger = logging.getLogger("⚙️")
 
-    @sync_character
-    async def _handle_response(self, response) -> dict:
-        data = response.json()
-
-        if "error" in data:
-            code = data["error"]["code"]
-            message = data["error"]["message"]
-
-            raise Exception(f"API error {code}: {message}")
-        return data
-
     async def _get_all_pages(self, endpoint: str) -> list[dict]:
         results = []
         page = 1

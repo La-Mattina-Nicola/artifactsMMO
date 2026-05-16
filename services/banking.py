@@ -12,7 +12,6 @@ class BankService:
         self.world = world
         self.items: dict[str, int] = {}
     
-    # bank_service
     async def load(self):
         items = await self.gateway.get_bank_items()
         self.items = {item["code"]: item["quantity"] for item in items}
