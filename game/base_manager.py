@@ -9,6 +9,8 @@ from game.character_controller import CharacterController
 from services import MovementService, GatherService, CraftingService
 from services.banking import BankService
 from services.deposit import DepositService
+from services.fighting import FightingService
+from services.resting import RestingService
 from tasks import MoveToTask, GoalTask
 from tasks.craft_task import CraftTask
 from routines import GatheringRoutine
@@ -37,9 +39,12 @@ class BaseManager:
         self.gathering_service = GatherService(gateway)
         self.crafting_service = CraftingService(gateway, world)
         self.deposit_service = DepositService(gateway, self.movement_service, world)
+        self.fighting_service = FightingService(gateway)
+        self.rest_service = RestingService(gateway)
 
         self.controllers = {
-            c.name: CharacterController(c, self.deposit_service) for c in characters
+            c.name: CharacterController(c, self.deposit_service, self.rest_service)
+            for c in characters
         }
 
     async def cmd_farm(self, name: str, drop_code: str, qty: int | None = None):
@@ -107,7 +112,7 @@ class BaseManager:
             logger.warning("Perso inconnu : %s", name)
             return
         c = self.controllers[name]
-        c.priority_task = None
+        c.priority_task = []
         c.todo_task = None
         c.default_routine = None
         logger.info("%s — arrêté", name)

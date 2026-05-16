@@ -4,26 +4,36 @@ from datetime import datetime, timezone
 
 from models import Character
 from services.deposit import DepositService
+from services.resting import RestingService
 from tasks.base_task import Task
 
 
-from tasks.exceptions import InventoryFullError, InventoryNotEmptyError
+from tasks.exceptions import (
+    HealthPointTooLowError,
+    InventoryFullError,
+    InventoryNotEmptyError,
+)
 from tasks.deposit_task import DepositTask
+from tasks.rest_task import RestTask
 
 logger = logging.getLogger(__name__)
 
 
 class CharacterController:
-    def __init__(self, character: Character, deposit_service: DepositService):
+    def __init__(
+        self,
+        character: Character,
+        deposit_service: DepositService,
+        rest_service: RestingService,
+    ):
         self.character = character
         self.deposit_service = deposit_service
-        self.priority_task: list[Task] | None = None
+        self.rest_service = rest_service
+        self.priority_task: list[Task] = []
         self.todo_task: Task | None = None
         self.default_routine = None
 
     def set_priority(self, task: Task):
-        if self.priority_task is None:
-            self.priority_task = []
         self.priority_task.append(task)
 
     def set_todo(self, task: Task):
@@ -43,7 +53,7 @@ class CharacterController:
         while True:
             await self._wait_cooldown()
 
-            if self.priority_task is not None and len(self.priority_task) > 0:
+            if self.priority_task and len(self.priority_task) > 0:
                 active_task = self.priority_task[-1]
                 source = "PRIORITY"
 
@@ -79,10 +89,16 @@ class CharacterController:
                     elif source == "TODO":
                         self.todo_task = None
 
+            except HealthPointTooLowError:
+                logger.warning(
+                    "%s n'a pas assez de points de vie pour exécuter %s, attente de 30 secondes",
+                    self.character.name,
+                    active_task.__class__.__name__,
+                )
+                self.priority_task.append(RestTask(self.rest_service))
             except (InventoryFullError, InventoryNotEmptyError):
                 logger.debug(f"INJECT DEPOSIT TASK pour {self.character.name}")
-                if self.priority_task is None:
-                    self.priority_task = []
+
                 self.priority_task.append(DepositTask(self.deposit_service))
                 logger.debug(f"priority_task = {self.priority_task}")
 

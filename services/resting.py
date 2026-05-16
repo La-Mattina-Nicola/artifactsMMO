@@ -2,9 +2,9 @@ from api import ArtifactsGateway
 from models import Character
 
 
-class GatherService:
+class RestingService:
     def __init__(self, gateway: ArtifactsGateway):
         self.gateway = gateway
 
-    async def gather_resources(self, character: Character):
-        await self.gateway.gather(character)
+    async def rest(self, character: Character):
+        await self.gateway.rest(character)

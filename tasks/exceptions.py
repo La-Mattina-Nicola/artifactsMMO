@@ -4,3 +4,7 @@ class InventoryFullError(Exception):
 
 class InventoryNotEmptyError(Exception):
     pass
+
+
+class HealthPointTooLowError(Exception):
+    pass
