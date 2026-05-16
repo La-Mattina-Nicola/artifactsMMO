@@ -8,3 +8,7 @@ class InventoryNotEmptyError(Exception):
 
 class HealthPointTooLowError(Exception):
     pass
+
+
+class InsufficientSkillLevelError(Exception):
+    pass

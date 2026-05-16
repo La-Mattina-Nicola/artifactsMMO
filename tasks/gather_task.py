@@ -23,7 +23,7 @@ class GatherTask(Task):
                 self.node,
                 self.node.content_code,
             )
-            return True
+            return False
 
         await self.gathering_service.gather_resources(character)
         return True

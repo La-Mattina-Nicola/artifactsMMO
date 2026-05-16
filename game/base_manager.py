@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from game.character_controller import CharacterController
+from models.item import Item
 from services import MovementService, GatherService, CraftingService
 from services.banking import BankService
 from services.deposit import DepositService
@@ -13,7 +14,7 @@ from services.fighting import FightingService
 from services.resting import RestingService
 from tasks import MoveToTask, GoalTask
 from tasks.craft_task import CraftTask
-from routines import GatheringRoutine
+from routines import GatheringRoutine, CraftingRoutine
 
 if TYPE_CHECKING:
     from data.world import World
@@ -47,6 +48,46 @@ class BaseManager:
             for c in characters
         }
 
+        for c in characters:
+            ctrl = CharacterController(c, self.deposit_service, self.rest_service)
+            ctrl.on_delegation_needed = self._delegate_task
+            self.controllers[c.name] = ctrl
+
+    async def _delegate_task(self, requester: Character, item: Item, quantity: int):
+        """Trouve un perso capable de crafter et lui assigne la tâche."""
+        skill = item.craft.skill
+        required_level = item.craft.level
+
+        capable = [
+            name
+            for name, c in self.characters.items()
+            if name != requester.name
+            and getattr(c.skills, skill).level >= required_level
+        ]
+
+        if not capable:
+            logger.warning(
+                "Aucun perso capable de crafter %s (skill: %s lv.%d)",
+                item.name,
+                skill,
+                required_level,
+            )
+            return
+
+        target = next(
+            (name for name in capable if self.controllers[name].todo_task is None),
+            capable[0],
+        )
+
+        logger.info(
+            "Délégation : %s → %s pour %dx %s",
+            requester.name,
+            target,
+            quantity,
+            item.name,
+        )
+        await self.cmd_craft(target, item.code, quantity)
+
     async def cmd_farm(self, name: str, drop_code: str, qty: int | None = None):
         if name not in self.controllers:
             logger.warning("Perso inconnu : %s", name)
@@ -75,6 +116,23 @@ class BaseManager:
             self.controllers[name].set_todo(GoalTask(routine, condition))
             logger.info("%s — farm %s jusqu'à %d", name, drop_code, qty)
 
+    async def cmd_craft_routine(self, name: str, item_code: str):
+        """Lance une CraftingRoutine en default — craft jusqu'à épuisement des ressources."""
+        item = self.world.items.get(item_code)
+        if item is None or item.craft is None:
+            logger.warning("Item inconnu ou non craftable : %s", item_code)
+            return
+
+        routine = CraftingRoutine(
+            item_code=item_code,
+            bank_service=self.bank_service,
+            craft_service=self.crafting_service,
+            movement_service=self.movement_service,
+            world=self.world,
+        )
+        self.controllers[name].set_default(routine)
+        logger.info("%s — CraftingRoutine %s en default", name, item_code)
+
     async def cmd_craft(self, name: str, item_code: str, quantity: int):
         if name not in self.controllers:
             logger.warning("Perso inconnu : %s", name)
@@ -96,7 +154,7 @@ class BaseManager:
             craft_service=self.crafting_service,
             movement_service=self.movement_service,
         )
-        self.controllers[name].set_priority(task)
+        self.controllers[name].set_todo(task)
         logger.info("%s — craft %dx %s", name, quantity, item.name)
 
     async def cmd_move(self, name: str, x: int, y: int):

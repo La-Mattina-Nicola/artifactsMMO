@@ -255,13 +255,14 @@ class GameManager(BaseManager):
             return
 
         c = self.controllers[name]
-        c.priority_task = None
+        c.priority_task = []
         c.todo_task = None
         c.default_routine = None
 
         self.log(f"{name} arrêté.")
 
     async def _cmd_bank(self, args):
+        await self.bank_service.load()
         if not self.bank_service.items:
             self.log("Banque vide ou non chargée.")
             return
@@ -274,34 +275,24 @@ class GameManager(BaseManager):
             self.log(f"{code:<30} {qty:>10}")
 
     async def _cmd_craft(self, args):
-        if len(args) != 3:
-            self.log("Usage : craft <name> <item_code> <quantity>")
-            return
+        if len(args) == 2:
+            # Sans qty → CraftingRoutine en default
+            if args[0] not in self.controllers:
+                self.log(f"Personnage inconnu : {args[0]}")
+                return
+            await self.cmd_craft_routine(args[0], args[1])
+            self.log(f"{args[0]} craft {args[1]} en boucle")
 
-        name, item_code, quantity = args[0], args[1], int(args[2])
+        elif len(args) == 3:
+            # Avec qty → CraftTask en todo
+            if args[0] not in self.controllers:
+                self.log(f"Personnage inconnu : {args[0]}")
+                return
+            await self.cmd_craft(args[0], args[1], int(args[2]))
+            self.log(f"{args[0]} craft {args[2]}x {args[1]}")
 
-        if name not in self.controllers:
-            self.log(f"Personnage inconnu : {name}")
-            return
-
-        item = self.world.items.get(item_code)
-        if item is None:
-            self.log(f"Item inconnu : {item_code}")
-            return
-
-        if item.craft is None:
-            self.log(f"{item_code} n'est pas craftable")
-            return
-
-        task = CraftTask(
-            item=item,
-            quantity=quantity,
-            bank_service=self.bank_service,
-            craft_service=self.crafting_service,
-            movement_service=self.movement_service,
-        )
-        self.controllers[name].set_priority(task)
-        self.log(f"{name} craft {quantity}x {item.name}")
+        else:
+            self.log("Usage : craft <name> <item> [qty]")
 
     async def _cmd_fight(self, args):
         if len(args) < 2:

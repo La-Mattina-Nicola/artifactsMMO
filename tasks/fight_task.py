@@ -33,7 +33,7 @@ class FighterTask(Task):
                 self.monster_node,
                 self.monster_node.content_code,
             )
-            return True
+            return False
 
         await self.fight_service.fight(character)
         return True

@@ -10,6 +10,7 @@ from tasks.base_task import Task
 
 from tasks.exceptions import (
     HealthPointTooLowError,
+    InsufficientSkillLevelError,
     InventoryFullError,
     InventoryNotEmptyError,
 )
@@ -89,9 +90,21 @@ class CharacterController:
                     elif source == "TODO":
                         self.todo_task = None
 
+            except InsufficientSkillLevelError as e:
+                logger.warning(
+                    "%s - délégation nécessaire pour %s",
+                    self.character.name,
+                    e.item.name,
+                )
+                if self.on_delegation_needed:
+                    await self.on_delegation_needed(self.character, e.item, e.quantity)
+                if source == "PRIORITY":
+                    self.priority_task.pop()
+                elif source == "TODO":
+                    self.todo_task = None
             except HealthPointTooLowError:
                 logger.warning(
-                    "%s n'a pas assez de points de vie pour exécuter %s, attente de 30 secondes",
+                    "%s n'a pas assez de points de vie pour exécuter %s",
                     self.character.name,
                     active_task.__class__.__name__,
                 )
@@ -101,6 +114,11 @@ class CharacterController:
 
                 self.priority_task.append(DepositTask(self.deposit_service))
                 logger.debug(f"priority_task = {self.priority_task}")
+
+            except StopIteration as e:
+                logger.info("%s — routine terminée : %s", self.character.name, str(e))
+                if source == "DEFAULT":
+                    self.default_routine = None
 
             except Exception as e:
                 import traceback
@@ -114,6 +132,6 @@ class CharacterController:
                 await asyncio.sleep(1)
                 if not active_task.retry_on_fail:
                     if source == "PRIORITY":
-                        self.priority_task = None
+                        self.priority_task.pop()
                     elif source == "TODO":
                         self.todo_task = None

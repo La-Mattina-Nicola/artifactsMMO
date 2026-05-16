@@ -12,3 +12,6 @@ class Skills:
     jewelrycrafting: SkillLevel
     cooking: SkillLevel
     alchemy: SkillLevel
+
+    def get(self, skill_name: str) -> SkillLevel:
+        return getattr(self, skill_name)

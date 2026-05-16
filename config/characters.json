@@ -17,6 +17,6 @@
   },
   "Kio_util": {
     "default": "farm",
-    "args": ["nettle_leaf"]
+    "args": ["iron_ore"]
   }
 }

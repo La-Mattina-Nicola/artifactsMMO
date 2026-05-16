@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 from tasks import Task
-from tasks.exceptions import InventoryNotEmptyError
+from tasks.exceptions import InsufficientSkillLevelError, InventoryNotEmptyError
 from models.item import Item
 
 if TYPE_CHECKING:
@@ -49,6 +49,20 @@ class CraftTask(Task):
                     "Pas assez de ressources en banque pour crafter %s", self.item
                 )
                 return True
+            
+                    # Vérifier le niveau requis
+            required_level = self.item.craft.level
+            skill = self.item.craft.skill
+            character_level = getattr(character.skills, skill).level
+            if character_level < required_level:
+                logger.warning(
+                    "Niveau %d requis en %s pour crafter %s (niveau actuel : %d)",
+                    required_level,
+                    skill,
+                    self.item.name,
+                    character_level,
+                )
+                raise InsufficientSkillLevelError(self.item, self.quantity)
             self._step = 1
             return False
 
