@@ -3,7 +3,11 @@ from prompt_toolkit.completion import Completer, Completion
 
 class BotCompleter(Completer):
     def __init__(
-        self, character_names: list[str], drop_codes: list[str], craft_items: list[str]
+        self,
+        character_names: list[str],
+        drop_codes: list[str],
+        craft_items: list[str],
+        monster_codes: list[str],
     ):
         self.character_names = character_names
         self.commands = {
@@ -12,12 +16,14 @@ class BotCompleter(Completer):
             "bank": [],
             "move": character_names,
             "farm": character_names,
+            "fight": character_names,
             "craft": character_names,
             "stop": character_names,
             "quit": [],
         }
         self.farm_drops = drop_codes
         self.craft_items = craft_items
+        self.monster_codes = monster_codes
 
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor.split()
@@ -48,6 +54,8 @@ class BotCompleter(Completer):
                 candidates = self.farm_drops
             elif cmd == "craft":
                 candidates = self.craft_items
+            elif cmd == "fight":
+                candidates = self.monster_codes
             else:
                 candidates = []
 

@@ -9,7 +9,7 @@
   },
   "Kio_wood": {
     "default": "farm",
-    "args": ["shrimp"]
+    "args": ["trout"]
   },
   "Kio_fish": {
     "default": "farm",

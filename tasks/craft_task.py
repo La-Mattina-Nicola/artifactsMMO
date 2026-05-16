@@ -21,7 +21,7 @@ class CraftTask(Task):
     def __init__(
         self,
         item: Item,
-        quantity,
+        quantity: int,
         bank_service: BankService,
         craft_service: CraftingService,
         movement_service: MovementService,

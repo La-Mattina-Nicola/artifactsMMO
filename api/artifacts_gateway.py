@@ -155,3 +155,13 @@ class ArtifactsGateway:
             json=items,
         )
         return response.json()
+
+    @sync_character
+    async def fight(self, character) -> dict:
+        response = await self.api_client.post(f"/my/{character}/action/fight")
+        return response.json()
+
+    @sync_character
+    async def rest(self, character) -> dict:
+        response = await self.api_client.post(f"/my/{character}/action/rest")
+        return response.json()

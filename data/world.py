@@ -178,3 +178,13 @@ class World:
         if not nodes:
             return None
         return min(nodes, key=lambda t: abs(t.x - x) + abs(t.y - y))
+
+    def closest_monster_tile(self, monster_code: str, x: int, y: int) -> MapTile | None:
+        monster_positions = [
+            tile
+            for tile in self.maps.values()
+            if tile.content_type == "monster" and tile.content_code == monster_code
+        ]
+        if not monster_positions:
+            return None
+        return min(monster_positions, key=lambda t: abs(t.x - x) + abs(t.y - y))

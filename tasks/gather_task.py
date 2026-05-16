@@ -25,8 +25,5 @@ class GatherTask(Task):
             )
             return True
 
-        await self.gathering_service.gather_resources(
-            character,
-            self.node.content_code,
-        )
+        await self.gathering_service.gather_resources(character)
         return True

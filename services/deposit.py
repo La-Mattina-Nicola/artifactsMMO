@@ -7,6 +7,7 @@ class DepositService:
     def __init__(self, gateway, movement_service: MovementService, world: World):
         self.gateway = gateway
         self.movement_service = movement_service
+        self.world = world
 
     def _closest_bank(self, x: int, y: int) -> tuple[int, int]:
         return min(self.world.banks, key=lambda b: abs(b[0] - x) + abs(b[1] - y))

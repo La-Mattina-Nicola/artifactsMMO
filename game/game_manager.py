@@ -17,7 +17,7 @@ from prompt_toolkit.widgets import Frame
 from data.world import World
 from services.deposit import DepositService
 from tasks import MoveToTask, GoalTask
-from routines import GatheringRoutine
+from routines import GatheringRoutine, FightingRoutine
 from tasks.craft_task import CraftTask
 
 logger = logging.getLogger(__name__)
@@ -48,9 +48,8 @@ class GameManager(BaseManager):
             list(self.characters.keys()),
             [drop.code for r in self.world.resources.values() for drop in r.drops],
             [code for code, item in self.world.items.items() if item.craft is not None],
+            [m.code for m in self.world.monsters.values()],
         )
-
-        self.deposit_service = DepositService(gateway, self.movement_service)
 
         self._stop_event = asyncio.Event()
 
@@ -164,6 +163,7 @@ class GameManager(BaseManager):
             "move": self._cmd_move,
             "farm": self._cmd_farm,
             "craft": self._cmd_craft,
+            "fight": self._cmd_fight,
             "bank": self._cmd_bank,
             "stop": self._cmd_stop,
         }
@@ -303,6 +303,36 @@ class GameManager(BaseManager):
         self.controllers[name].set_priority(task)
         self.log(f"{name} craft {quantity}x {item.name}")
 
+    async def _cmd_fight(self, args):
+        if len(args) < 2:
+            self.log("Usage : fight <name> <monster_code>")
+            return
+
+        name = args[0]
+        monster_code = args[1]
+
+        if name not in self.controllers:
+            self.log(f"Personnage inconnu : {name}")
+            return
+
+        character = self.characters[name]
+        tile = self.world.closest_monster_tile(
+            monster_code, character.position.x, character.position.y
+        )
+        if tile is None:
+            self.log(f"Monstre inconnu : {monster_code}")
+            return
+
+        controller = self.controllers[name]
+        routine = FightingRoutine(
+            monster_code=monster_code,
+            world=self.world,
+            movement_service=self.movement_service,
+            fighting_service=self.fighting_service,
+        )
+        controller.set_default(routine)
+        self.log(f"{name} combat {monster_code} en boucle")
+
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))
 
@@ -314,7 +344,7 @@ class GameManager(BaseManager):
         )
 
     async def _startup(self):
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         await self.load_defaults()
 
 

@@ -1,12 +1,15 @@
-from asyncio.log import logger
-
+import logging
+from data.world import World
 from routines import Routine
 from tasks.gather_task import GatherTask
 from tasks.move_task import MoveToTask
 
 
+logger = logging.getLogger(__name__)
+
+
 class GatheringRoutine(Routine):
-    def __init__(self, drop_code, world, movement_service, gathering_service):
+    def __init__(self, drop_code, world: "World", movement_service, gathering_service):
         self.drop_code = drop_code
         self.world = world
         self.movement_service = movement_service
