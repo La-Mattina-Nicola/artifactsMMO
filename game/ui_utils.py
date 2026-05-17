@@ -8,7 +8,7 @@ def percent(xp, max_xp):
     return f"{(xp / max_xp) * 100:4.1f}%"
 
 
-def cooldown_bar(character, width=11):
+def cooldown_bar(character, width=9):
     total = character.cooldowns.value
     remaining = character.cooldown_remaining
 
@@ -18,5 +18,5 @@ def cooldown_bar(character, width=11):
         filled = int(width * (remaining / total))
 
     empty = width - filled
-    bar = f"{'█' * filled}{'▒' * empty}"
+    bar = f"{'█' * filled}{' ' * empty}"
     return f"{bar} {remaining:<3} s"

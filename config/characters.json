@@ -1,22 +1,22 @@
 {
   "Kioyaa": {
-    "default": "farm",
-    "args": ["shrimp"]
+    "default": "fight",
+    "args": ["chicken"]
   },
   "Kioyaa_g": {
-    "default": "farm",
-    "args": ["coal"]
+    "default": "fight",
+    "args": ["chicken"]
   },
   "Kio_wood": {
-    "default": "farm",
-    "args": ["trout"]
+    "default": "fight",
+    "args": ["chicken"]
   },
   "Kio_fish": {
-    "default": "farm",
-    "args": ["trout"]
+    "default": "fight",
+    "args": ["chicken"]
   },
   "Kio_util": {
-    "default": "farm",
-    "args": ["iron_ore"]
+    "default": "fight",
+    "args": ["chicken"]
   }
 }

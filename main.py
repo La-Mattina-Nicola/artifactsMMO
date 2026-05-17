@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from api import ApiClient, ArtifactsGateway
 from data.world import World
 from services.banking import BankService
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -19,15 +20,21 @@ def setup_logging(headless: bool):
 
     if headless:
         handlers.append(logging.StreamHandler(sys.stdout))
-        handlers.append(logging.FileHandler("bot.log", encoding="utf-8"))
+        handlers.append(
+            RotatingFileHandler(
+                "bot.log",
+                maxBytes=5 * 1024 * 1024,
+                backupCount=3,
+                encoding="utf-8",
+            )
+        )
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         handlers=handlers if handlers else [logging.NullHandler()],
     )
 
-    # Réduire le bruit des libs HTTP
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 

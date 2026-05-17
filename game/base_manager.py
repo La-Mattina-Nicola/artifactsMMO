@@ -7,11 +7,13 @@ from typing import TYPE_CHECKING
 
 from game.character_controller import CharacterController
 from models.item import Item
+from routines.fighting_routine import FightingRoutine
+from routines.tasking_routine import TaskingRoutine
 from services import MovementService, GatherService, CraftingService
 from services.banking import BankService
-from services.deposit import DepositService
 from services.fighting import FightingService
 from services.resting import RestingService
+from services.tasking import TaskService
 from tasks import MoveToTask, GoalTask
 from tasks.craft_task import CraftTask
 from routines import GatheringRoutine, CraftingRoutine
@@ -33,23 +35,21 @@ class BaseManager:
     ):
         self.gateway = gateway
         self.world = world
-        self.bank_service = bank_service
         self.characters = {c.name: c for c in characters}
 
         self.movement_service = MovementService(gateway)
         self.gathering_service = GatherService(gateway)
         self.crafting_service = CraftingService(gateway, world)
-        self.deposit_service = DepositService(gateway, self.movement_service, world)
         self.fighting_service = FightingService(gateway)
         self.rest_service = RestingService(gateway)
+        self.tasking_service = TaskService(gateway, self.movement_service)
 
-        self.controllers = {
-            c.name: CharacterController(c, self.deposit_service, self.rest_service)
-            for c in characters
-        }
+        bank_service.movement_service = self.movement_service
+        self.bank_service = bank_service
 
+        self.controllers = {}
         for c in characters:
-            ctrl = CharacterController(c, self.deposit_service, self.rest_service)
+            ctrl = CharacterController(c, self.bank_service, self.rest_service)
             ctrl.on_delegation_needed = self._delegate_task
             self.controllers[c.name] = ctrl
 
@@ -112,8 +112,14 @@ class BaseManager:
             self.controllers[name].set_default(routine)
             logger.info("%s — farm %s en boucle", name, drop_code)
         else:
-            condition = make_farm_condition(drop_code, qty)
-            self.controllers[name].set_todo(GoalTask(routine, condition))
+            # ✅ nouvelle signature
+            self.controllers[name].set_todo(
+                GoalTask(
+                    item_code=drop_code,
+                    target_quantity=qty,
+                    routine=routine,
+                )
+            )
             logger.info("%s — farm %s jusqu'à %d", name, drop_code, qty)
 
     async def cmd_craft_routine(self, name: str, item_code: str):
@@ -165,6 +171,54 @@ class BaseManager:
         self.controllers[name].set_priority(task)
         logger.info("%s — déplacement vers (%d, %d)", name, x, y)
 
+    async def cmd_fight(self, name: str, args: list):
+        if len(args) < 2:
+            self.log("Usage : fight <name> <monster_code>")
+            return
+
+        name = name
+        monster_code = args
+
+        if name not in self.controllers:
+            self.log(f"Personnage inconnu : {name}")
+            return
+
+        character = self.characters[name]
+        tile = self.world.closest_monster_tile(
+            monster_code, character.position.x, character.position.y
+        )
+        if tile is None:
+            self.log(f"Monstre inconnu : {monster_code}")
+            return
+
+        controller = self.controllers[name]
+        routine = FightingRoutine(
+            monster_code=monster_code,
+            world=self.world,
+            movement_service=self.movement_service,
+            fighting_service=self.fighting_service,
+        )
+        controller.set_default(routine)
+        self.log(f"{name} combat {monster_code} en boucle")
+
+    async def cmd_task(self, name: str, task_type: str | None = "items"):
+        if name not in self.controllers:
+            logger.warning("Perso inconnu : %s", name)
+            return
+
+        routine = TaskingRoutine(
+            movement_service=self.movement_service,
+            tasking_service=self.tasking_service,
+            gathering_service=self.gathering_service,
+            fighting_service=self.fighting_service,
+            bank_service=self.bank_service,
+            craft_service=self.crafting_service,
+            world=self.world,
+            type=task_type,
+        )
+        self.controllers[name].set_default(routine)
+        logger.info("%s — TaskingRoutine (%s) en default", name, task_type or "auto")
+
     async def cmd_stop(self, name: str):
         if name not in self.controllers:
             logger.warning("Perso inconnu : %s", name)
@@ -195,6 +249,11 @@ class BaseManager:
                 await self.cmd_farm(name, args[0], qty)
             elif command == "craft":
                 await self.cmd_craft(name, args[0], int(args[1]))
+            elif command == "fight":
+                await self.cmd_fight(name, args[0])
+            elif command == "task":
+                task_type = args[0] if args else "items"
+                await self.cmd_task(name, task_type)
             elif command == "stop":
                 await self.cmd_stop(name)
 

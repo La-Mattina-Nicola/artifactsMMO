@@ -32,7 +32,7 @@ class ApiClient:
             data = response.json()
             code = data["error"]["code"]
             message = data["error"]["message"]
-            logger.debug("API POST %s — %s", endpoint)
+            logger.debug("API POST %s", endpoint)
             raise ApiError(code, message)
 
         return response

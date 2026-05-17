@@ -18,3 +18,10 @@ class CraftingService:
         if coords is None:
             raise ValueError(f"Atelier inconnu pour le skill : {skill}")
         return coords
+
+    def get_workshop(self, item: Item) -> tuple[int, int]:
+        skill = item.craft.skill
+        coords = self.world.workshops.get(skill)
+        if coords is None:
+            raise ValueError(f"Atelier inconnu pour le skill : {skill}")
+        return coords

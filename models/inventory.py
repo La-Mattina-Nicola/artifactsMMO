@@ -34,3 +34,6 @@ class Inventory:
 
     def is_empty(self) -> bool:
         return sum(i.quantity for i in self.items) == 0
+
+    def total_items(self) -> int:
+        return sum(i.quantity for i in self.items)

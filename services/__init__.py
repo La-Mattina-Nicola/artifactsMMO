@@ -4,3 +4,4 @@ from .crafting import CraftingService
 from .tasking import TaskService
 from .resting import RestingService
 from .fighting import FightingService
+from .banking import BankService

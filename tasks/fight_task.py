@@ -14,12 +14,7 @@ class FighterTask(Task):
         self.fight_service = fight_service
 
     async def execute_step(self, character: Character) -> bool:
-        if character.stats.hp < character.stats.max_hp:
-            logger.warning(
-                "%s n'est pas à 100%% de vie pour combattre %s",
-                character.name,
-                self.monster_node.content_code,
-            )
+        if character.stats.hp < (character.stats.max_hp // 2):
             raise HealthPointTooLowError()
         if character.inventory.is_full():
             raise InventoryFullError()

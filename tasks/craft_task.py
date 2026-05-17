@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
+from models import character
 from tasks import Task
 from tasks.exceptions import InsufficientSkillLevelError, InventoryNotEmptyError
 from models.item import Item
@@ -49,8 +50,8 @@ class CraftTask(Task):
                     "Pas assez de ressources en banque pour crafter %s", self.item
                 )
                 return True
-            
-                    # Vérifier le niveau requis
+
+                # Vérifier le niveau requis
             required_level = self.item.craft.level
             skill = self.item.craft.skill
             character_level = getattr(character.skills, skill).level
@@ -62,13 +63,12 @@ class CraftTask(Task):
                     self.item.name,
                     character_level,
                 )
-                raise InsufficientSkillLevelError(self.item, self.quantity)
+                raise InsufficientSkillLevelError(self.item, self.total_quantity)
             self._step = 1
             return False
 
         # Step 1 - deposer inventaire à la banque
         if self._step == 1:
-            logger.debug("Inventory empty ? %s", character.inventory.is_empty())
             if not character.inventory.is_empty():
                 raise InventoryNotEmptyError()
             self._step = 2
@@ -114,7 +114,7 @@ class CraftTask(Task):
 
         # Step 4 — se déplacer à l'atelier
         if self._step == 4:
-            wx, wy = await self.craft_service.get_workshop(self.item)
+            wx, wy = self.craft_service.get_workshop(self.item)
             logger.debug(
                 "%s — step 4 : pos=(%d,%d) workshop=(%d,%d)",
                 character.name,

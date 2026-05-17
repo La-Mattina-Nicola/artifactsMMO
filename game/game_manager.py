@@ -15,23 +15,34 @@ from prompt_toolkit.layout.containers import FloatContainer, Float
 from prompt_toolkit.layout.menus import CompletionsMenu
 from prompt_toolkit.widgets import Frame
 from data.world import World
-from services.deposit import DepositService
 from tasks import MoveToTask, GoalTask
 from routines import GatheringRoutine, FightingRoutine
 from tasks.craft_task import CraftTask
 
 logger = logging.getLogger(__name__)
 
+MAX_LOG_LINES = 500
+
 
 class TextAreaHandler(logging.Handler):
     def __init__(self, manager):
         super().__init__()
         self.manager = manager
+        self._pending = 0
+        self.MAX_PENDING = 50  # max messages en attente
 
     def emit(self, record):
+        if self._pending >= self.MAX_PENDING:
+            return  # drop le message si trop de backlog
         msg = self.format(record)
         if self.manager.app and self.manager.app.loop:
-            self.manager.app.loop.call_soon_threadsafe(lambda: self.manager.log(msg))
+            self._pending += 1
+
+            def _log():
+                self._pending -= 1
+                self.manager.log(msg)
+
+            self.manager.app.loop.call_soon_threadsafe(_log)
 
 
 class GameManager(BaseManager):
@@ -42,7 +53,7 @@ class GameManager(BaseManager):
         self.log_handler.setFormatter(logging.Formatter("%(name)s — %(message)s"))
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_handler)
-        root_logger.setLevel(logging.INFO)  # LEVEL LOGGING
+        root_logger.setLevel(logging.WARNING)  # LEVEL LOGGING
 
         self._completer = BotCompleter(
             list(self.characters.keys()),
@@ -153,6 +164,14 @@ class GameManager(BaseManager):
 
     def log(self, msg: str):
         self.log_area.buffer.insert_text(msg + "\n")
+
+        lines = self.log_area.text.split("\n")
+        if len(lines) > MAX_LOG_LINES:
+            from prompt_toolkit.document import Document
+
+            trimmed = "\n".join(lines[-MAX_LOG_LINES:])
+            self.log_area.buffer.set_document(Document(trimmed), bypass_readonly=True)
+
         self.log_area.buffer.cursor_position = len(self.log_area.text)
 
     async def _dispatch(self, command: str, args: list[str]):
@@ -164,6 +183,7 @@ class GameManager(BaseManager):
             "farm": self._cmd_farm,
             "craft": self._cmd_craft,
             "fight": self._cmd_fight,
+            "task": self._cmd_task,
             "bank": self._cmd_bank,
             "stop": self._cmd_stop,
         }
@@ -240,8 +260,13 @@ class GameManager(BaseManager):
             controller.set_default(routine)
             self.log(f"🎯 — {name:<10} farm {drop_code:<20} en boucle")
         else:
-            condition = make_goal_condition(drop_code, qty)
-            controller.set_todo(GoalTask(routine, condition))
+            self.controllers[name].set_todo(
+                GoalTask(
+                    item_code=drop_code,
+                    target_quantity=qty,
+                    routine=routine,
+                )
+            )
             self.log(f"{name:<10} farm {drop_code:<20} jusqu'à {qty}")
 
     async def _cmd_stop(self, args):
@@ -294,7 +319,7 @@ class GameManager(BaseManager):
         else:
             self.log("Usage : craft <name> <item> [qty]")
 
-    async def _cmd_fight(self, args):
+    async def _cmd_fight(self, args: list):
         if len(args) < 2:
             self.log("Usage : fight <name> <monster_code>")
             return
@@ -323,6 +348,20 @@ class GameManager(BaseManager):
         )
         controller.set_default(routine)
         self.log(f"{name} combat {monster_code} en boucle")
+
+    async def _cmd_task(self, args):
+        if len(args) < 1 or len(args) > 2:
+            self.log("Usage : task <name> [items|monsters]")
+            return
+        name = args[0]
+        task_type = args[1] if len(args) == 2 else None
+
+        if name not in self.controllers:
+            self.log(f"Personnage inconnu : {name}")
+            return
+
+        await self.cmd_task(name, task_type)
+        self.log(f"{name} — TaskingRoutine ({task_type or 'auto'}) en default")
 
     async def _controllers_loop(self):
         await asyncio.gather(*(c.main_loop() for c in self.controllers.values()))

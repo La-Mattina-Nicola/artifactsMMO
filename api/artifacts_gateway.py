@@ -1,8 +1,9 @@
 import logging
-from dotenv.main import logger
 from api import ApiClient
 from models.character import Character
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 
 def sync_character(func):
@@ -92,16 +93,13 @@ class ArtifactsGateway:
 
     async def get_bank(self) -> dict:
         response = await self.api_client.get(f"/my/bank")
-        self.drops_logger.debug(f"Bank response: {response}")
         return response.json()
 
-    @sync_character
     async def get_account_characters(self, account: str) -> list[Character]:
         response = await self.api_client.get(f"/accounts/{account}/characters")
         data = response.json()
         return [Character.from_dto({"data": c}) for c in data["data"]]
 
-    @sync_character
     async def get_all_characters(self, names: list[str]) -> list[Character]:
         characters = []
         for name in names:
@@ -109,7 +107,6 @@ class ArtifactsGateway:
             characters.append(character)
         return characters
 
-    @sync_character
     async def get_character(self, character_name: str) -> Character:
         response = await self.api_client.get(f"/characters/{character_name}")
         return response.json()
@@ -128,12 +125,6 @@ class ArtifactsGateway:
 
     @sync_character
     async def craft(self, name: str, item_id: int, quantity: int) -> dict:
-        logger.debug(
-            "Crafting request: character=%s, item_id=%d, quantity=%d",
-            name,
-            item_id,
-            quantity,
-        )
         response = await self.api_client.post(
             f"/my/{name}/action/crafting",
             json={"code": item_id, "quantity": quantity},
@@ -164,4 +155,23 @@ class ArtifactsGateway:
     @sync_character
     async def rest(self, character) -> dict:
         response = await self.api_client.post(f"/my/{character}/action/rest")
+        return response.json()
+
+    @sync_character
+    async def accept_quest(self, character) -> dict:
+        response = await self.api_client.post(f"/my/{character}/action/task/new")
+        return response.json()
+
+    @sync_character
+    async def complete_quest(self, character) -> dict:
+        response = await self.api_client.post(f"/my/{character}/action/task/complete")
+        return response.json()
+
+    @sync_character
+    async def trade_quest(self, character, item_code: str, quantity: int) -> dict:
+
+        response = await self.api_client.post(
+            f"/my/{character}/action/task/trade",
+            json={"code": item_code, "quantity": quantity},
+        )
         return response.json()

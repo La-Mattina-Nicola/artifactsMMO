@@ -18,6 +18,7 @@ class BotCompleter(Completer):
             "farm": character_names,
             "fight": character_names,
             "craft": character_names,
+            "task": character_names,
             "stop": character_names,
             "quit": [],
         }
@@ -56,6 +57,8 @@ class BotCompleter(Completer):
                 candidates = self.craft_items
             elif cmd == "fight":
                 candidates = self.monster_codes
+            elif cmd == "task":
+                candidates = ["items", "monsters"]
             else:
                 candidates = []
 

@@ -4,3 +4,8 @@ from .gather_task import GatherTask
 from .goal_task import GoalTask
 from .fight_task import FighterTask
 from .craft_task import CraftTask
+from .deposit_task import DepositTask
+from .withdraw_task import WithdrawTask
+from .trade_task_quest import TradeTask
+from .accept_task_quest import AcceptTask
+from .complete_task_quest import CompleteTask

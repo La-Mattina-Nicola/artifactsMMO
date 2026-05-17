@@ -1,42 +1,41 @@
-from asyncio.log import logger
+import logging
 
+from services.banking import BankService
 from tasks.base_task import Task
 from models import Character
-from services.deposit import DepositService
+
+logger = logging.getLogger(__name__)
 
 
 class DepositTask(Task):
     retry_on_fail = True
 
-    def __init__(self, deposit_service: DepositService):
-        self.deposit_service = deposit_service
-        self._moved = False
+    def __init__(self, bank_service):
+        self.bank_service = bank_service
+        self._step = 0
 
-    async def execute_step(self, character: Character) -> bool:
-        try:
-            bx, by = self.deposit_service._closest_bank(
+    async def execute_step(self, character) -> bool:
+        # Step 0 — se déplacer à la banque
+        if self._step == 0:
+            bx, by = self.bank_service.closest_bank(
                 character.position.x, character.position.y
             )
-            logger.debug(
-                f"DEPOSIT: pos={character.position.x},{character.position.y} bank={bx},{by}"
-            )
-
             if character.position.x != bx or character.position.y != by:
-                logger.debug(f"DEPOSIT: déplacement vers banque {bx},{by}")
-                await self.deposit_service.movement_service.move(character, bx, by)
-                logger.debug(f"DEPOSIT: déplacement terminé")
-                return False
+                await self.bank_service.movement_service.move(character, bx, by)
+                return False  # ← revenir au controller pour attendre le cooldown
+            self._step = 1
+            return False
 
-            logger.debug(f"DEPOSIT: dépôt des items")
-
+        # Step 1 — déposer
+        if self._step == 1:
             items = [
                 {"code": item.code, "quantity": item.quantity}
                 for item in character.inventory.items
             ]
             if items:
-                await self.deposit_service.gateway.deposit_items(character, items)
-
+                await self.bank_service.gateway.deposit_items(character, items)
+                for item in items:
+                    self.bank_service.items[item["code"]] = (
+                        self.bank_service.items.get(item["code"], 0) + item["quantity"]
+                    )
             return True
-        except Exception as e:
-            logger.debug(f"DEPOSIT ERROR: {e}")
-            raise
