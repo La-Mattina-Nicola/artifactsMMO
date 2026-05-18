@@ -1,11 +1,12 @@
-from asyncio import Task
 import logging
 from collections import deque
 
+from tasks import Task
 from models.character import Character
-from routines import Routine, FightingRoutine, GatheringRoutine, CraftingRoutine
+from routines import Routine, FightingRoutine, GatheringRoutine
 from tasks.craft_task import CraftTask
 from tasks.deposit_task import DepositTask
+from tasks.monster_goal_task import MonsterGoalTask
 from tasks.move_task import MoveToTask
 from tasks.goal_task import GoalTask
 from tasks import TradeTask, AcceptTask, CompleteTask, WithdrawTask
@@ -18,7 +19,6 @@ from services import (
     BankService,
 )
 from data.world import World
-from tasks.withdraw_task import WithdrawIngredientsTask
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class TaskingRoutine(Routine):
         bank_service: BankService,
         craft_service: CraftingService,
         world: World,
-        type: str = "items",
+        task_type: str = "items",
     ):
         self.movement_service = movement_service
         self.tasking_service = tasking_service
@@ -47,7 +47,7 @@ class TaskingRoutine(Routine):
         self.bank_service = bank_service
         self.craft_service = craft_service
         self.world = world
-        self.type = type
+        self.task_type = task_type
 
         self.plan = deque()
 
@@ -67,9 +67,9 @@ class TaskingRoutine(Routine):
         # 2. Pas de quête → accept
         # -----------------------------
         if character.task is None or not character.task.name:
-            if self.type is None:
-                self.type = "items"  # default
-            tx, ty = TASK_MASTERS[self.type]
+            if self.task_type is None:
+                self.task_type = "items"
+            tx, ty = TASK_MASTERS[self.task_type]
             if (character.position.x, character.position.y) != (tx, ty):
                 return MoveToTask(tx, ty, self.movement_service)
 
@@ -104,9 +104,8 @@ class TaskingRoutine(Routine):
                 movement_service=self.movement_service,
                 fighting_service=self.fighting_service,
             )
-            return GoalTask(
-                item_code=task.name,
-                target_quantity=task.total - task.progress,
+            return MonsterGoalTask(
+                target_progress=task.total,
                 routine=routine,
             )
 
@@ -163,7 +162,7 @@ class TaskingRoutine(Routine):
                 character.position.y,
             )
             needed = character.task.total - character.task.progress
-            batch = min(character.inventory.max_items, needed)
+            batch = min(character.inventory.max_items, needed, bank_qty)
 
             plan.append(MoveToTask(bx, by, self.movement_service))
             plan.append(DepositTask(self.bank_service))
@@ -196,6 +195,32 @@ class TaskingRoutine(Routine):
         item = self.world.items.get(task.name)
 
         if item and item.craft:
+            has_resources = all(
+                self.bank_service.items.get(ing.code, 0) >= ing.quantity
+                for ing in item.craft.items
+            )
+            if not has_resources:
+                # farmer les ingrédients manquants...
+                for ing in item.craft.items:
+                    available = self.bank_service.items.get(ing.code, 0)
+                    if available < ing.quantity:
+                        missing = ing.quantity - available
+                        routine = GatheringRoutine(
+                            drop_code=ing.code,
+                            world=self.world,
+                            movement_service=self.movement_service,
+                            gathering_service=self.gathering_service,
+                        )
+                        plan.append(
+                            GoalTask(
+                                item_code=ing.code,
+                                target_quantity=missing,
+                                routine=routine,
+                            )
+                        )
+                return plan
+
+            # ✅ Si ressources OK → ajouter le CraftTask
             plan.append(
                 CraftTask(
                     item=item,
@@ -203,10 +228,9 @@ class TaskingRoutine(Routine):
                     bank_service=self.bank_service,
                     craft_service=self.craft_service,
                     movement_service=self.movement_service,
-                ),
+                )
             )
-
-            return plan
+            return plan  # ← manquait
 
         # -----------------------------
         # 4. FARM fallback
@@ -221,7 +245,7 @@ class TaskingRoutine(Routine):
         plan.append(
             GoalTask(
                 item_code=task.name,
-                target_quantity=needed,
+                target_quantity=remaining,
                 routine=routine,
             )
         )

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from api.artifacts_gateway import ArtifactsGateway
 from game.bot_completer import BotCompleter
 from game.base_manager import BaseManager
 from game.status_renderer import render_status_table
@@ -17,7 +18,6 @@ from prompt_toolkit.widgets import Frame
 from data.world import World
 from tasks import MoveToTask, GoalTask
 from routines import GatheringRoutine, FightingRoutine
-from tasks.craft_task import CraftTask
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,9 @@ class TextAreaHandler(logging.Handler):
 
 
 class GameManager(BaseManager):
-    def __init__(self, characters, gateway, world: "World", bank_service):
+    def __init__(
+        self, characters, gateway: ArtifactsGateway, world: "World", bank_service
+    ):
         super().__init__(characters, gateway, world, bank_service)
 
         self.log_handler = TextAreaHandler(self)

@@ -14,7 +14,7 @@ class FighterTask(Task):
         self.fight_service = fight_service
 
     async def execute_step(self, character: Character) -> bool:
-        if character.stats.hp < (character.stats.max_hp // 2):
+        if character.stats.hp < ((character.stats.max_hp // 2) + 40):
             raise HealthPointTooLowError()
         if character.inventory.is_full():
             raise InventoryFullError()

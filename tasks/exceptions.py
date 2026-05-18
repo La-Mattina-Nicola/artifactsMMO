@@ -11,4 +11,8 @@ class HealthPointTooLowError(Exception):
 
 
 class InsufficientSkillLevelError(Exception):
-    pass
+    def __init__(self, skill: str, required_level: int, item_code: str, quantity: int):
+        self.skill = skill
+        self.required_level = required_level
+        self.item_code = item_code
+        self.quantity = quantity

@@ -72,6 +72,11 @@ class CharacterController:
 
             elif self.todo_task:
                 active_task = self.todo_task
+                logger.info(
+                    "%s — nouvelle tâche TODO : %s",
+                    self.character.name,
+                    active_task.__class__.__name__,
+                )
                 source = "TODO"
 
             elif self.default_routine:
@@ -108,12 +113,30 @@ class CharacterController:
 
             except InsufficientSkillLevelError as e:
                 logger.warning(
-                    "%s - délégation nécessaire pour %s",
+                    "%s — niveau %s insuffisant (requis: lv.%d)",
                     self.character.name,
-                    e.item.name,
+                    e.skill,
+                    e.required_level,
                 )
                 if self.on_delegation_needed:
-                    await self.on_delegation_needed(self.character, e.item, e.quantity)
+                    await self.on_delegation_needed(
+                        self.character,
+                        e.skill,
+                        e.required_level,
+                        e.item_code,
+                        e.quantity,
+                    )
+                # Vider le slot — qu'il y ait délégation ou non
+                if source == "PRIORITY":
+                    self.priority_task.pop()
+                elif source == "TODO":
+                    self.todo_task = None
+                elif source == "DEFAULT":
+                    self.default_routine = (
+                        None  # ← stopper la routine si délégation impossible
+                    )
+                active_task = None
+                await asyncio.sleep(5)
                 if source == "PRIORITY":
                     self.priority_task.pop()
                 elif source == "TODO":

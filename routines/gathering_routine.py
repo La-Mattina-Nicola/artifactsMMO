@@ -1,6 +1,7 @@
 import logging
 from data.world import World
 from routines import Routine
+from tasks.exceptions import InsufficientSkillLevelError
 from tasks.gather_task import GatherTask
 from tasks.move_task import MoveToTask
 
@@ -19,12 +20,14 @@ class GatheringRoutine(Routine):
         node = self.world.closest_node(
             self.drop_code, character.position.x, character.position.y
         )
+        resource = self.world.resources.get(node.content_code)
+        if resource:
+            char_level = getattr(character.skills, resource.skill).level
+            if char_level < resource.level:
+                raise InsufficientSkillLevelError(resource.skill, resource.level)
         if node is None:
             raise ValueError(f"Aucun node trouvé pour le drop '{self.drop_code}'")
         if character.position.x != node.x or character.position.y != node.y:
-            logger.debug(
-                "%s n'est pas encore sur le node, génère MoveToTask", character.name
-            )
             return MoveToTask(node.x, node.y, self.movement_service)
 
         return GatherTask(node, self.gathering_service)

@@ -18,5 +18,5 @@ def cooldown_bar(character, width=9):
         filled = int(width * (remaining / total))
 
     empty = width - filled
-    bar = f"{'█' * filled}{' ' * empty}"
+    bar = f"{' ' * empty}{'█' * filled}"
     return f"{bar} {remaining:<3} s"
