@@ -1,22 +1,32 @@
 {
   "Kioyaa": {
-    "default": "farm",
-    "args": ["shrimp"]
+    "default": "task",
+    "args": ["items"],
+    "fallback": "farm",
+    "fallback_args": ["trout"]
   },
   "Kioyaa_g": {
-    "default": "farm",
-    "args": ["spruce_wood"]
+    "default": "task",
+    "args": ["items"],
+    "fallback": "farm",
+    "fallback_args": ["iron_ore"]
   },
   "Kio_wood": {
     "default": "farm",
-    "args": ["birch_wood"]
+    "args": ["birch_wood"],
+    "fallback": "farm",
+    "fallback_args": ["trout"]
   },
   "Kio_fish": {
     "default": "farm",
-    "args": ["trout"]
+    "args": ["sunflower"],
+    "fallback": "farm",
+    "fallback_args": ["bass"]
   },
   "Kio_util": {
     "default": "farm",
-    "args": ["gudgeon"]
+    "args": ["nettle_leaf"],
+    "fallback": "farm",
+    "fallback_args": ["nettle_leaf"]
   }
 }

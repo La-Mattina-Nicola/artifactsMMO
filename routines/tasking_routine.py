@@ -39,6 +39,7 @@ class TaskingRoutine(Routine):
         craft_service: CraftingService,
         world: World,
         task_type: str = "items",
+        fallback_drop: str | None = None,
     ):
         self.movement_service = movement_service
         self.tasking_service = tasking_service
@@ -48,6 +49,7 @@ class TaskingRoutine(Routine):
         self.craft_service = craft_service
         self.world = world
         self.task_type = task_type
+        self.fallback_drop = fallback_drop
 
         self.plan = deque()
 

@@ -76,11 +76,17 @@ class BaseManager:
                 skill,
                 required_level,
             )
-            # Arrêter la routine du demandeur pour éviter qu'il boucle
             ctrl = self.controllers.get(requester.name)
-            if ctrl:
+            fallback = getattr(ctrl.default_routine, "fallback_drop", None)
+            if fallback:
+                logger.info(
+                    "%s — délégation impossible, fallback farm %s",
+                    requester.name,
+                    fallback,
+                )
+                await self.cmd_farm(requester.name, fallback)
+            else:
                 ctrl.default_routine = None
-                ctrl.todo_task = None
             return
 
         target = capable[0]
@@ -207,7 +213,12 @@ class BaseManager:
         self.controllers[name].set_default(routine)
         logger.info("%s — combat %s en boucle", name, monster_code)
 
-    async def cmd_task(self, name: str, task_type: str | None = "items"):
+    async def cmd_task(
+        self,
+        name: str,
+        task_type: str | None = "items",
+        fallback_drop: str | None = None,
+    ):
         if name not in self.controllers:
             logger.warning("Perso inconnu : %s", name)
             return
@@ -221,6 +232,7 @@ class BaseManager:
             craft_service=self.crafting_service,
             world=self.world,
             task_type=task_type,
+            fallback_drop=fallback_drop,
         )
         self.controllers[name].set_default(routine)
         logger.info("%s — TaskingRoutine (%s) en default", name, task_type or "auto")
@@ -259,7 +271,8 @@ class BaseManager:
                 await self.cmd_fight(name, args[0])
             elif command == "task":
                 task_type = args[0] if args else "items"
-                await self.cmd_task(name, task_type)
+                fallback_drop = settings.get("fallback_args", [None])[0]
+                await self.cmd_task(name, task_type, fallback_drop=fallback_drop)
             elif command == "stop":
                 await self.cmd_stop(name)
 
