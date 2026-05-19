@@ -1,7 +1,6 @@
 from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
-from models import character
 from tasks import Task
 from tasks.exceptions import InsufficientSkillLevelError, InventoryNotEmptyError
 from models.item import Item
