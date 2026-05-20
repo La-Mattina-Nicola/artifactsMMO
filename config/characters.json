@@ -1,24 +1,24 @@
 {
   "Kioyaa": {
     "default": "fight",
-    "args": ["mushmush"],
+    "args": ["skeleton"],
     "fallback": "farm",
     "fallback_args": ["sunflower"]
   },
   "Kioyaa_g": {
     "default": "fight",
-    "args": ["mushmush"]
+    "args": ["skeleton"]
   },
   "Kio_wood": {
     "default": "fight",
-    "args": ["mushmush"]
+    "args": ["skeleton"]
   },
   "Kio_fish": {
     "default": "fight",
-    "args": ["mushmush"]
+    "args": ["skeleton"]
   },
   "Kio_util": {
     "default": "fight",
-    "args": ["mushmush"]
+    "args": ["skeleton"]
   }
 }
