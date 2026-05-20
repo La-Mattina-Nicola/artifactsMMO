@@ -26,7 +26,7 @@ class World:
         self.resources: dict[str, Resource] = {}  # clé: resource.code
         self.items: dict[str, Item] = {}  # clé: item.code
         self.monsters: dict[str, Monster] = {}  # clé: monster.code
-        self.banks: list[tuple[int, int]] = []  # chargé depuis les maps
+        self.banks: list[tuple[int, int, list]] = []  # chargé depuis les maps
         self.workshops: dict[str, tuple[int, int]] = {}  # chargé depuis les maps
 
     async def load(self, gateway, force_refresh: bool = False):
@@ -47,14 +47,14 @@ class World:
     async def _load_maps(self, gateway, force_refresh: bool = False):
         raw = await self._fetch_or_cache("maps", gateway.get_maps, force_refresh)
         self.maps = {}
+        self.banks = []
+        self.workshops = {}
+
         for d in raw:
             content = d.get("interactions", {}).get("content") or {}
+            transition = d.get("interactions", {}).get("transition") or {}
             content_type = content.get("type")
             content_code = content.get("code")
-            if content_type == "bank":
-                self.banks.append((d["x"], d["y"]))
-            if content_type == "workshop":
-                self.workshops[content_code] = (d["x"], d["y"])
 
             tile = MapTile(
                 map_id=d["map_id"],
@@ -64,8 +64,18 @@ class World:
                 layer=d["layer"],
                 content_type=content.get("type"),
                 content_code=content.get("code"),
+                transition_x=transition.get("x"),
+                transition_y=transition.get("y"),
+                transition_layer=transition.get("layer"),
+                transition_conditions=transition.get("conditions", []),
             )
             self.maps[f"{d['x']},{d['y']},{d['layer']}"] = tile
+
+            if content_type == "bank":
+                conditions = d.get("access", {}).get("conditions", [])
+                self.banks.append((d["x"], d["y"], conditions))
+            if content_type == "workshop":
+                self.workshops[content_code] = (d["x"], d["y"])
 
     async def _load_resources(self, gateway, force_refresh: bool = False):
         raw = await self._fetch_or_cache(

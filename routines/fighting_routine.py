@@ -23,7 +23,13 @@ class FightingRoutine(Routine):
         if (
             character.position.x != monster_tile.x
             or character.position.y != monster_tile.y
+            or character.position.layer != monster_tile.layer
         ):
-            return MoveToTask(monster_tile.x, monster_tile.y, self.movement_service)
+            return MoveToTask(
+                monster_tile.x,
+                monster_tile.y,
+                self.movement_service,
+                layer=monster_tile.layer,
+            )
 
         return FighterTask(monster_tile, self.fighting_service)

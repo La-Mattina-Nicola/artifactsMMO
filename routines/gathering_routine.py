@@ -27,7 +27,7 @@ class GatheringRoutine(Routine):
                 raise InsufficientSkillLevelError(resource.skill, resource.level)
         if node is None:
             raise ValueError(f"Aucun node trouvé pour le drop '{self.drop_code}'")
-        if character.position.x != node.x or character.position.y != node.y:
-            return MoveToTask(node.x, node.y, self.movement_service)
+        if character.position.x != node.x or character.position.y != node.y or character.position.layer != node.layer:
+            return MoveToTask(node.x, node.y, self.movement_service, layer=node.layer)
 
         return GatherTask(node, self.gathering_service)

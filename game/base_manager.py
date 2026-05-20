@@ -37,9 +37,9 @@ class BaseManager:
         self.world = world
         self.characters = {c.name: c for c in characters}
 
-        self.movement_service = MovementService(gateway)
+        self.movement_service = MovementService(gateway, self.world)
         self.gathering_service = GatherService(gateway)
-        self.crafting_service = CraftingService(gateway, world)
+        self.crafting_service = CraftingService(gateway, self.world)
         self.fighting_service = FightingService(gateway)
         self.rest_service = RestingService(gateway)
         self.tasking_service = TaskService(gateway, self.movement_service)

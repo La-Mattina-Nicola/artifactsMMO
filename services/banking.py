@@ -20,8 +20,13 @@ class BankService:
         self.movement_service = movement_service  # ← ajout
         self.items: dict[str, int] = {}
 
-    def closest_bank(self, x, y) -> tuple[int, int]:
-        return min(self.world.banks, key=lambda b: abs(b[0] - x) + abs(b[1] - y))
+    def closest_bank(self, x: int, y: int) -> tuple[int, int]:
+        free_banks = [
+            (bx, by) for bx, by, conditions in self.world.banks if not conditions
+        ]
+        if not free_banks:
+            raise ValueError("Aucune banque accessible")
+        return min(free_banks, key=lambda b: abs(b[0] - x) + abs(b[1] - y))
 
     async def _move_to_bank(self, character: "Character"):
         bx, by = self.closest_bank(character.position.x, character.position.y)

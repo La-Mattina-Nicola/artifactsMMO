@@ -113,7 +113,7 @@ class CraftTask(Task):
 
         # Step 4 — se déplacer à l'atelier
         if self._step == 4:
-            wx, wy = self.craft_service.get_workshop(self.item)
+            wx, wy = await self.craft_service.get_workshop(self.item)
             logger.debug(
                 "%s — step 4 : pos=(%d,%d) workshop=(%d,%d)",
                 character.name,

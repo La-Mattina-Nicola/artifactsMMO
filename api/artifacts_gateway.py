@@ -119,6 +119,11 @@ class ArtifactsGateway:
         return response.json()
 
     @sync_character
+    async def transition(self, character) -> dict:
+        response = await self.api_client.post(f"/my/{character}/action/transition")
+        return response.json()
+
+    @sync_character
     async def gather(self, character):
         response = await self.api_client.post(f"/my/{character}/action/gathering")
         return response.json()

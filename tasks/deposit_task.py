@@ -8,25 +8,33 @@ logger = logging.getLogger(__name__)
 
 
 class DepositTask(Task):
-    retry_on_fail = True
-
     def __init__(self, bank_service: BankService):
         self.bank_service = bank_service
         self._step = 0
+        self._move_task = None  # ← stocker le MoveToTask
 
     async def execute_step(self, character: Character) -> bool:
-        # Step 0 — se déplacer à la banque
         if self._step == 0:
             bx, by = self.bank_service.closest_bank(
                 character.position.x, character.position.y
             )
-            if character.position.x != bx or character.position.y != by:
-                await self.bank_service.movement_service.move(character, bx, by)
-                return False
+            if (
+                character.position.x != bx
+                or character.position.y != by
+                or character.position.layer != "overworld"
+            ):
+                if self._move_task is None:
+                    from tasks.move_task import MoveToTask
+
+                    self._move_task = MoveToTask(
+                        bx, by, self.bank_service.movement_service, layer="overworld"
+                    )
+                done = await self._move_task.execute_step(character)
+                if not done:
+                    return False
             self._step = 1
             return False
 
-        # Step 1 — déposer
         if self._step == 1:
             items = [
                 {"code": item.code, "quantity": item.quantity}
