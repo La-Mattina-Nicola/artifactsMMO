@@ -1,24 +1,28 @@
 {
   "Kioyaa": {
     "default": "fight",
-    "args": ["skeleton"],
+    "args": ["flying_snake"],
     "fallback": "farm",
     "fallback_args": ["sunflower"]
   },
   "Kioyaa_g": {
     "default": "fight",
-    "args": ["skeleton"]
+    "args": ["flying_snake"]
   },
   "Kio_wood": {
-    "default": "fight",
-    "args": ["skeleton"]
+    "default": "task",
+    "args": ["monsters"],
+    "fallback": "farm",
+    "fallback_args": ["birch_tree"]
   },
   "Kio_fish": {
     "default": "fight",
-    "args": ["skeleton"]
+    "args": ["flying_snake"]
   },
   "Kio_util": {
-    "default": "fight",
-    "args": ["skeleton"]
+    "default": "task",
+    "args": ["monsters"],
+    "fallback": "farm",
+    "fallback_args": ["iron_ore"]
   }
 }

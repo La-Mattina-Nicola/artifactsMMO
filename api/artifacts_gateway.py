@@ -129,25 +129,25 @@ class ArtifactsGateway:
         return response.json()
 
     @sync_character
-    async def craft(self, name: str, item_id: int, quantity: int) -> dict:
+    async def craft(self, character: str, item_id: int, quantity: int) -> dict:
         response = await self.api_client.post(
-            f"/my/{name}/action/crafting",
+            f"/my/{character}/action/crafting",
             json={"code": item_id, "quantity": quantity},
         )
         return response.json()
 
     @sync_character
-    async def deposit_items(self, name: str, items: list[dict]) -> dict:
+    async def deposit_items(self, character: str, items: list[dict]) -> dict:
         response = await self.api_client.post(
-            f"/my/{name}/action/bank/deposit/item",
+            f"/my/{character}/action/bank/deposit/item",
             json=items,
         )
         return response.json()
 
     @sync_character
-    async def withdraw_items(self, name: str, items: list[dict]) -> dict:
+    async def withdraw_items(self, character: str, items: list[dict]) -> dict:
         response = await self.api_client.post(
-            f"/my/{name}/action/bank/withdraw/item",
+            f"/my/{character}/action/bank/withdraw/item",
             json=items,
         )
         return response.json()

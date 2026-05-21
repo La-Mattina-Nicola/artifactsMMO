@@ -60,7 +60,6 @@ class CharacterController:
 
         while True:
             await self._wait_cooldown()
-            await asyncio.sleep(0.5)
             # 1. Si une tâche est en cours → continuer
             if active_task is not None:
                 source = "ACTIVE"

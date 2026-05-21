@@ -9,7 +9,7 @@ class CraftingService:
         self.world = world
 
     async def craft(self, character: Character, item: Item, quantity: int = 1):
-        await self.gateway.craft(character.name, item.code, quantity)
+        await self.gateway.craft(character, item.code, quantity)
 
     async def get_workshop(self, item: Item) -> tuple[int, int]:
         skill = item.craft.skill
