@@ -1,4 +1,3 @@
-# tasks/trade_task.py
 import logging
 from tasks.base_task import Task
 

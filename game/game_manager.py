@@ -256,6 +256,9 @@ class GameManager(BaseManager):
             world=self.world,
             movement_service=self.movement_service,
             gathering_service=self.gathering_service,
+            bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
         )
 
         if qty is None:
@@ -347,6 +350,9 @@ class GameManager(BaseManager):
             world=self.world,
             movement_service=self.movement_service,
             fighting_service=self.fighting_service,
+            bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
         )
         controller.set_default(routine)
         self.log(f"{name} combat {monster_code} en boucle")

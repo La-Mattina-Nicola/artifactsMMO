@@ -19,7 +19,6 @@ class GoalTask(Task):
 
         current = character.inventory.count(self.item_code)
 
-        # Dépôt détecté si l'inventaire a diminué sans qu'on ait récolté
         if current < self._last_count:
             self._banked += self._last_count - current
         self._last_count = current

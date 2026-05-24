@@ -60,6 +60,16 @@ class BankService:
         )
         self.items[item_code] = max(0, self.items.get(item_code, 0) - quantity)
 
+    async def withdraw_items(self, character: "Character", items: list[dict]):
+        if not items:
+            return
+        await self._move_to_bank(character)
+        await self.gateway.withdraw_items(character, items)
+        for item in items:
+            code = item["code"]
+            qty = item["quantity"]
+            self.items[code] = max(0, self.items.get(code, 0) - qty)
+
     async def withdraw_ingredients(
         self, character: "Character", item: "Item", quantity: int
     ):

@@ -5,3 +5,5 @@ from .tasking import TaskService
 from .resting import RestingService
 from .fighting import FightingService
 from .banking import BankService
+from .equipment import EquipmentService
+from .loadout_planner import LoadoutPlanner

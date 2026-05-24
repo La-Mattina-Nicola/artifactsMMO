@@ -18,7 +18,7 @@ def render_status_table(characters: dict[str, "Character"]) -> str:
 
     row = f"{'HP & POS':<12}: "
     row += " | ".join(
-        col(f"{c.stats.hp}/{c.stats.max_hp:<7} [{c.position.x},{c.position.y}]")
+        col(f"{c.stats.hp}/{c.stats.max_hp:>4}{' ' * 4} {c.position.x},{c.position.y}")
         for c in chars
     )
     lines.append(row)

@@ -121,6 +121,7 @@ class World:
                 level=d["level"],
                 type=d["type"],
                 subtype=d.get("subtype", ""),
+                conditions=d.get("conditions", []),
                 effects=[
                     ItemEffect(code=e["code"], value=e["value"])
                     for e in d.get("effects", [])
@@ -139,7 +140,19 @@ class World:
                 name=d["name"],
                 code=d["code"],
                 level=d["level"],
+                type=d.get("type", ""),
                 hp=d["hp"],
+                attack_fire=d.get("attack_fire", 0),
+                attack_earth=d.get("attack_earth", 0),
+                attack_water=d.get("attack_water", 0),
+                attack_air=d.get("attack_air", 0),
+                res_fire=d.get("res_fire", 0),
+                res_earth=d.get("res_earth", 0),
+                res_water=d.get("res_water", 0),
+                res_air=d.get("res_air", 0),
+                critical_strike=d.get("critical_strike", 0),
+                initiative=d.get("initiative", 0),
+                effects=d.get("effects", []),
                 drops=[
                     MonsterDrop(
                         code=drop["code"],

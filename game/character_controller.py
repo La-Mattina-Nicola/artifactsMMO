@@ -33,15 +33,24 @@ class CharacterController:
         self.todo_task: Task | None = None
         self.default_routine = None
         self.on_delegation_needed = None
+        self._pre_task_deposit_pending = False
 
     def set_priority(self, task: Task):
         self.priority_task.append(task)
 
     def set_todo(self, task: Task):
         self.todo_task = task
+        if not self.character.inventory.is_empty():
+            self._pre_task_deposit_pending = True
 
     def set_default(self, routine):
         self.default_routine = routine
+        if (
+            routine is not None
+            and not getattr(routine, "pre_deposit_handled", False)
+            and not self.character.inventory.is_empty()
+        ):
+            self._pre_task_deposit_pending = True
 
     async def _wait_cooldown(self):
         expiration = self.character.cooldowns.expiration
@@ -60,9 +69,22 @@ class CharacterController:
 
         while True:
             await self._wait_cooldown()
+            if (
+                active_task is None
+                and self._pre_task_deposit_pending
+                and not self.priority_task
+                and (self.todo_task or self.default_routine)
+            ):
+                if self.character.inventory.is_empty():
+                    self._pre_task_deposit_pending = False
+                else:
+                    active_task = DepositTask(self.bank_service)
+                    source = "PREP"
+
             # 1. Si une tâche est en cours → continuer
             if active_task is not None:
-                source = "ACTIVE"
+                if source != "PREP":
+                    source = "ACTIVE"
 
             # 2. Sinon → choisir une nouvelle tâche
             elif self.priority_task:
@@ -106,6 +128,8 @@ class CharacterController:
                         self.priority_task.pop()
                     elif source == "TODO":
                         self.todo_task = None
+                    elif source == "PREP":
+                        self._pre_task_deposit_pending = False
 
                     # libérer la tâche active
                     active_task = None

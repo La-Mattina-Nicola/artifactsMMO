@@ -180,3 +180,29 @@ class ArtifactsGateway:
             json={"code": item_code, "quantity": quantity},
         )
         return response.json()
+
+    @sync_character
+    async def use_item(self, character, item_code: str, quantity: int = 1) -> dict:
+        response = await self.api_client.post(
+            f"/my/{character}/action/use",
+            json={"code": item_code, "quantity": quantity},
+        )
+        return response.json()
+
+    @sync_character
+    async def equip_item(
+        self, character, item_code: str, slot: str = None, quantity: int = 1
+    ) -> dict:
+        response = await self.api_client.post(
+            f"/my/{character}/action/equip",
+            json={"code": item_code, "slot": slot, "quantity": quantity},
+        )
+        return response.json()
+
+    @sync_character
+    async def unequip_item(self, character, slot: str, quantity: int = 1) -> dict:
+        response = await self.api_client.post(
+            f"/my/{character}/action/unequip",
+            json={"slot": slot, "quantity": quantity},
+        )
+        return response.json()

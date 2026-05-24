@@ -8,12 +8,24 @@ logger = logging.getLogger(__name__)
 
 
 class DepositTask(Task):
-    def __init__(self, bank_service: BankService):
+    def __init__(self, bank_service: BankService, keep_codes: set[str] | None = None):
         self.bank_service = bank_service
         self._step = 0
-        self._move_task = None  # ← stocker le MoveToTask
+        self._move_task = None
+        self.keep_codes = keep_codes or set()
+
+    def _items_to_deposit(self, character: Character) -> list[dict]:
+        return [
+            {"code": item.code, "quantity": item.quantity}
+            for item in character.inventory.items
+            if item.code not in self.keep_codes
+        ]
 
     async def execute_step(self, character: Character) -> bool:
+        items = self._items_to_deposit(character)
+        if not items:
+            return True
+
         if self._step == 0:
             bx, by = self.bank_service.closest_bank(
                 character.position.x, character.position.y
@@ -36,10 +48,7 @@ class DepositTask(Task):
             return False
 
         if self._step == 1:
-            items = [
-                {"code": item.code, "quantity": item.quantity}
-                for item in character.inventory.items
-            ]
+            items = self._items_to_deposit(character)
             if items:
                 await self.bank_service.gateway.deposit_items(character, items)
                 for item in items:

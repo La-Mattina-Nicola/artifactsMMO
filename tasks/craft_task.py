@@ -50,7 +50,7 @@ class CraftTask(Task):
                 )
                 return True
 
-                # Vérifier le niveau requis
+            # Vérifier le niveau requis
             required_level = self.item.craft.level
             skill = self.item.craft.skill
             character_level = getattr(character.skills, skill).level

@@ -10,6 +10,7 @@ from game.character_controller import CharacterController
 from routines.fighting_routine import FightingRoutine
 from routines.tasking_routine import TaskingRoutine
 from services import MovementService, GatherService, CraftingService
+from services import EquipmentService, LoadoutPlanner
 from services.banking import BankService
 from services.fighting import FightingService
 from services.resting import RestingService
@@ -41,11 +42,13 @@ class BaseManager:
         self.gathering_service = GatherService(gateway)
         self.crafting_service = CraftingService(gateway, self.world)
         self.fighting_service = FightingService(gateway)
-        self.rest_service = RestingService(gateway)
+        self.rest_service = RestingService(gateway, self.world, bank_service)
+        self.equipment_service = EquipmentService(gateway)
         self.tasking_service = TaskService(gateway, self.movement_service)
 
         bank_service.movement_service = self.movement_service
         self.bank_service = bank_service
+        self.loadout_planner = LoadoutPlanner(self.world, self.bank_service)
 
         self.controllers = {}
         for c in characters:
@@ -95,6 +98,9 @@ class BaseManager:
             world=self.world,
             movement_service=self.movement_service,
             gathering_service=self.gathering_service,
+            bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
         )
         self.controllers[target].set_todo(
             GoalTask(item_code=item_code, target_quantity=quantity, routine=routine)
@@ -125,13 +131,15 @@ class BaseManager:
             world=self.world,
             movement_service=self.movement_service,
             gathering_service=self.gathering_service,
+            bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
         )
 
         if qty is None:
             self.controllers[name].set_default(routine)
             logger.info("%s — farm %s en boucle", name, drop_code)
         else:
-            # ✅ nouvelle signature
             self.controllers[name].set_todo(
                 GoalTask(
                     item_code=drop_code,
@@ -209,6 +217,9 @@ class BaseManager:
             world=self.world,
             movement_service=self.movement_service,
             fighting_service=self.fighting_service,
+            bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
         )
         self.controllers[name].set_default(routine)
         logger.info("%s — combat %s en boucle", name, monster_code)
@@ -229,6 +240,8 @@ class BaseManager:
             gathering_service=self.gathering_service,
             fighting_service=self.fighting_service,
             bank_service=self.bank_service,
+            equipment_service=self.equipment_service,
+            loadout_planner=self.loadout_planner,
             craft_service=self.crafting_service,
             world=self.world,
             task_type=task_type,

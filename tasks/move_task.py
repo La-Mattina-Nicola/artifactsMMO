@@ -12,7 +12,6 @@ class MoveToTask(Task):
         self._step = 0
 
     async def execute_step(self, character) -> bool:
-        # Déjà à destination
         if (
             character.position.x == self.x
             and character.position.y == self.y
@@ -20,12 +19,10 @@ class MoveToTask(Task):
         ):
             return True
 
-        # Même layer → move direct
         if character.position.layer == self.layer:
             await self.movement_service.move(character, self.x, self.y)
             return True
 
-        # Layer différent → transition
         if self._step == 0:
             tile = self.movement_service.find_transition(
                 character.position.x,

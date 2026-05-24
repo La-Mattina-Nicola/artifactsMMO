@@ -20,7 +20,6 @@ class CraftingRoutine(Routine):
         if item is None or item.craft is None:
             raise ValueError(f"Item inconnu ou non craftable : {self.item_code}")
 
-        # Vérifier qu'on peut faire au moins 1 craft
         has_resources = all(
             self.bank_service.items.get(ing.code, 0) >= ing.quantity
             for ing in item.craft.items
@@ -32,7 +31,6 @@ class CraftingRoutine(Routine):
             )
             raise StopIteration(f"Plus de ressources pour {item.name}")
 
-        # Calculer le batch max
         max_by_inventory = character.inventory.max_items // sum(
             i.quantity for i in item.craft.items
         )

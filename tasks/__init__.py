@@ -6,6 +6,8 @@ from .fight_task import FighterTask
 from .craft_task import CraftTask
 from .deposit_task import DepositTask
 from .withdraw_task import WithdrawTask
+from .withdraw_task import WithdrawItemsTask
+from .equip_task import EquipTask
 from .trade_task_quest import TradeTask
 from .accept_task_quest import AcceptTask
 from .complete_task_quest import CompleteTask

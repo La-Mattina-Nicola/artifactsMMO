@@ -1,4 +1,3 @@
-# tasks/monster_goal_task.py
 from models.character import Character
 from tasks.base_task import Task
 
