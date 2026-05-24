@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import logging
 from collections import defaultdict
-from dataclasses import dataclass
-from models import Character, Item, Monster
+
 from data.world import World
+from models import Character, Item, Monster
 
 from services.banking import BankService
 from services.combat_simulator import CombatSimulator, SimulationResult
@@ -208,17 +207,18 @@ class LoadoutPlanner:
             return None
 
         best_code = None
-        best_damage = -1
+        best_score = float("-inf")
+        simulator = CombatSimulator(monster)
 
         for code in candidates:
             item = self.world.items.get(code)
             if not item:
                 continue
             stats = self._apply_item_to_stats(base_stats, item)
-            simulator = CombatSimulator(monster)
-            damage = simulator._expected_damage_player(stats)
-            if damage > best_damage:
-                best_damage = damage
+            result = simulator.simulate(stats, include_log=False)
+            score = self._score_simulation(result)
+            if score > best_score:
+                best_score = score
                 best_code = code
 
         return best_code
